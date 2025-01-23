@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import type { Attachment, Message } from 'ai';
-import { useChat } from 'ai/react';
-import { useState } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import type { Attachment, Message } from "ai";
+import { useChat } from "ai/react";
+import { useState } from "react";
+import useSWR, { useSWRConfig } from "swr";
 
-import { ChatHeader } from '@/components/chat-header';
-import type { Vote } from '@/lib/db/schema';
-import { fetcher } from '@/lib/utils';
+import { ChatHeader } from "@/components/chat-header";
+import type { Vote } from "@/lib/db/schema";
+import { fetcher } from "@/lib/utils";
 
-import { Block } from './block';
-import { MultimodalInput } from './multimodal-input';
-import { Messages } from './messages';
-import { VisibilityType } from './visibility-selector';
-import { useBlockSelector } from '@/hooks/use-block';
+import { Block } from "./block";
+import { MultimodalInput } from "./multimodal-input";
+import { Messages } from "./messages";
+import { VisibilityType } from "./visibility-selector";
+import { useBlockSelector } from "@/hooks/use-block";
 
 export function Chat({
   id,
@@ -42,22 +42,25 @@ export function Chat({
     reload,
   } = useChat({
     id,
+    // ★★★ 重點：把預設的 /api/chat 改成我們的 /api/fake-stream ★★★
+    api: "/api/fake-stream",
+    // 這裡的 body 可視需求傳遞 Chat ID、模型參數、prompt 等
     body: { id, modelId: selectedModelId },
     initialMessages,
     experimental_throttle: 100,
-    onFinish: () => {
-      mutate('/api/history');
-    },
+    // onFinish: () => {
+    //   mutate("/api/history");
+    // },
   });
 
   const { data: votes } = useSWR<Array<Vote>>(
     `/api/vote?chatId=${id}`,
-    fetcher,
+    fetcher
   );
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isBlockVisible = useBlockSelector((state) => state.isVisible);
-
+  console.log("messages:", messages);
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-background">
