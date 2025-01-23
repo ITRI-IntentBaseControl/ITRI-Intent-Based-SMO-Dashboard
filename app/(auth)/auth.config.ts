@@ -1,38 +1,37 @@
-import type { NextAuthConfig } from 'next-auth';
-
 export const authConfig = {
   pages: {
-    signIn: '/login',
-    newUser: '/',
+    signIn: "/login",
+    newUser: "/",
   },
-  providers: [
-    // added later in auth.ts since it requires bcrypt which is only compatible with Node.js
-    // while this file is also used in non-Node.js environments
-  ],
+  providers: [],
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isOnChat = nextUrl.pathname.startsWith('/');
-      const isOnRegister = nextUrl.pathname.startsWith('/register');
-      const isOnLogin = nextUrl.pathname.startsWith('/login');
+      const path = nextUrl.pathname;
 
-      if (isLoggedIn && (isOnLogin || isOnRegister)) {
-        return Response.redirect(new URL('/', nextUrl as unknown as URL));
+      // 1. login, register 頁面 - 不需要登入
+      const isOnLogin = path.startsWith("/login");
+      const isOnRegister = path.startsWith("/register");
+      if (isOnLogin || isOnRegister) {
+        // 如果已經登入了，就不應該再留在 login/register 頁
+        if (isLoggedIn) {
+          return Response.redirect(new URL("/", nextUrl));
+        }
+        return true;
       }
 
-      if (isOnRegister || isOnLogin) {
-        return true; // Always allow access to register and login pages
-      }
-
+      // 2. 只保護 /chat 路徑
+      const isOnChat = path.startsWith("/chat");
       if (isOnChat) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
+        if (!isLoggedIn) {
+          // 未登入 => 強制導向 /login
+          return false;
+        }
+        // 已登入 => 放行
+        return true;
       }
 
-      if (isLoggedIn) {
-        return Response.redirect(new URL('/', nextUrl as unknown as URL));
-      }
-
+      // 3. 其他路徑 => 不需要登入即可進入
       return true;
     },
   },
