@@ -28,7 +28,6 @@ export function useMessageHandler({
     clientRef.current = client;
 
     client.on("connect", () => {
-      console.log("[useMessageHandler] MQTT connected to:", brokerUrl);
       // 如果有初始 topic，就訂閱
       if (currentTopic) {
         client.subscribe(currentTopic, (err) => {
@@ -39,12 +38,6 @@ export function useMessageHandler({
 
     client.on("message", (receivedTopic, payload) => {
       if (receivedTopic === currentTopic) {
-        console.log(
-          "receivedMessage:",
-          payload.toString(),
-          "from",
-          receivedTopic
-        );
         setMessages([payload.toString()]);
       }
     });
@@ -62,7 +55,6 @@ export function useMessageHandler({
     if (currentTopic) {
       c.unsubscribe(currentTopic);
     }
-    console.log("subscribeTopic:", newTopic);
     // 訂閱新 topic
     c.subscribe(newTopic, (err) => {
       //   if (err) console.error("Subscribe error:", err);

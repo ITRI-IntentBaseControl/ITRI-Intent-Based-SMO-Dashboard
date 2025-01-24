@@ -60,7 +60,6 @@ export function Chat({
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isBlockVisible = useBlockSelector((state) => state.isVisible);
-  console.log("messages:", messages);
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-background">

@@ -38,7 +38,7 @@ export default function Page() {
     setEmail(formData.get("email") as string);
     formAction(formData);
   };
-  console.log(state.status);
+
   return (
     <div className="flex h-dvh w-screen items-start pt-12 md:pt-0 md:items-center justify-center bg-background">
       <div className="w-full max-w-md overflow-hidden rounded-2xl flex flex-col gap-12">

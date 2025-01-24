@@ -1,25 +1,41 @@
-// app/conversation/page.tsx
-// 這是一個Server Component，用來初始渲染(SSR)
-// 假設我們要 SSR 出「歷史訊息」
-import React from "react";
-import ConversationClient from "./ConversationClient";
+"use client";
 
-export default async function ConversationPage() {
-  // (1) 伺服器端取得預設對話ID / 歷史訊息
-  //     這裡只是示範，你可能根據URL或其他邏輯判斷
-  const conversationId = null;
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createConversation } from "@/app/api/conversation/route";
 
-  // 假設從 DB 撈歷史訊息
-  // const history = await db.messages.findMany({where:{conversationId}});
-  // 這裡先用簡單示範
-  const history = ["(歷史訊息) Hi!", "(歷史訊息) Hello there!"];
+export default function HomePage() {
+  const router = useRouter();
+  const [userMessage, setUserMessage] = useState("");
 
-  // (2) 透過 props 傳給 Client Component
+  // 當使用者在根路由輸入訊息後
+  const handleSend = async () => {
+    try {
+      // 1. 假設你要先建立Conversation
+      const data = await createConversation();
+      // 後端回傳 { conversationId, topic }...
+      const conversationId = data.conversationId;
+      // 2. 轉跳到 conversation/[uid]
+      router.push(
+        `/conversation/${conversationId}?msg=${encodeURIComponent(userMessage)}`
+      );
+      // 可把使用者在此輸入的訊息帶到 QueryString (選擇性)
+    } catch (error) {
+      console.error("Create conversation error:", error);
+    }
+  };
+
   return (
-    <ConversationClient
-      conversationId={conversationId}
-      initialMessages={history}
-      brokerUrl="ws://140.118.2.52:42804"
-    />
+    <main>
+      <h1>根路由: 輸入訊息後建立/取得對話</h1>
+      <div style={{ marginBottom: "1rem" }}>
+        <input
+          placeholder="輸入第一則訊息..."
+          value={userMessage}
+          onChange={(e) => setUserMessage(e.target.value)}
+        />
+        <button onClick={handleSend}>送出</button>
+      </div>
+    </main>
   );
 }
