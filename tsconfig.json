@@ -28,6 +28,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "next.config.js"
-, "app/(auth_init)/signin/service.jsx", "app/(auth_init)/signin/page.jsx"  ],
+, "app/(auth_init)/signin/service.jsx", "app/(auth_init)/signin/page.jsx", "app/(coversation)/components/chat/icons.jsx"  ],
   "exclude": ["node_modules"]
 }

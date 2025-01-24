@@ -3,7 +3,16 @@
 import React, { useEffect, useState } from "react";
 import { useMessageHandler } from "@/app/hooks/useMessageHandler";
 import { sendMessageAPI } from "@/app/api/message/route";
-
+import { SidebarToggle } from "@/components/sidebar-toggle";
+import { useWindowSize } from "usehooks-ts";
+import { Button } from "@/components/ui/button";
+import { PlusIcon } from "../../components/icons";
+import { useSidebar } from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 interface Props {
   conversationId: string; // 由 page.tsx 帶進來
   initialMessages?: string[];
@@ -15,8 +24,12 @@ export default function ConversationClient({
   initialMessages = [],
   brokerUrl,
 }: Props) {
+  const [isReadonly, setIsReadonly] = useState(false);
+  const { width } = useWindowSize();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(width > 768);
+  const [isLoading, setIsLoading] = useState(false);
   const [inputValue, setInputValue] = useState("");
-
+  const { open } = useSidebar();
   // 把 SSR 帶進來的初始訊息放到 allMessages
   const [allMessages, setAllMessages] = useState([...initialMessages]);
 
@@ -40,7 +53,6 @@ export default function ConversationClient({
 
   // 發送訊息
   const handleSendMessage = async () => {
-
     if (!conversationId) return;
 
     try {
@@ -54,11 +66,31 @@ export default function ConversationClient({
       console.error("Send message failed:", error);
     }
   };
-
+  const { width: windowWidth } = useWindowSize();
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-      <h2>Conversation: {conversationId}</h2>
+    <div className="flex flex-col min-w-0 h-dvh bg-background">
+      <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
+        <SidebarToggle />
 
+        {(!open || windowWidth < 768) && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="order-2 md:order-1 md:px-2 px-2 md:h-fit ml-auto md:ml-0"
+                onClick={() => {
+                  router.push("/");
+                  router.refresh();
+                }}
+              >
+                <PlusIcon />
+                <span className="md:sr-only">New Chat</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>New Chat</TooltipContent>
+          </Tooltip>
+        )}
+      </header>
       <div style={{ display: "flex", gap: "4px", marginBottom: "8px" }}>
         <input
           value={inputValue}
