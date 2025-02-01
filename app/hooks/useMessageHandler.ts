@@ -56,9 +56,7 @@ export function useMessageHandler({
       c.unsubscribe(currentTopic);
     }
     // 訂閱新 topic
-    c.subscribe(newTopic, (err) => {
-      //   if (err) console.error("Subscribe error:", err);
-    });
+    c.subscribe(newTopic, (err) => {});
     setCurrentTopic(newTopic);
   };
 

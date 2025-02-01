@@ -5,11 +5,16 @@ import { useMessageHandler } from "@/app/hooks/useMessageHandler";
 import { sendMessageAPI } from "@/app/api/message/route";
 import { useWindowSize } from "usehooks-ts";
 import { useSidebar } from "@/components/ui/sidebar";
-
 import { ConversationHeader } from "./ConversationHeader";
 
+// 子元件
+import { ConversationInput } from "./ConversationInput";
+import { ConversationMessages } from "./ConversationMessages";
+import { ChatMessage } from "./MessageBubble";
+
 interface Props {
-  conversationId: string; // 由 page.tsx 帶進來
+  conversationId: string;
+  /** 由 SSR 或 root page 帶入的初始訊息，多半視為 user 所發起 */
   initialMessages?: string[];
   brokerUrl: string;
 }
@@ -20,67 +25,139 @@ export default function ConversationClient({
   brokerUrl,
 }: Props) {
   const { width } = useWindowSize();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(width > 768);
+  const [isSidebarOpen] = useState(width > 768);
   const [isLoading, setIsLoading] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const { open } = useSidebar();
 
-  // 把 SSR 帶進來的初始訊息放到 allMessages
-  const [allMessages, setAllMessages] = useState([...initialMessages]);
+  // ** 不再把 initialMessages 放進初始 state **
+  // 讓畫面載入後再以「sendUserMessage」的形式送出
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
-  // 使用我們的 Hook，尚未指定初始 topic
-  const { messages, subscribeTopic } = useMessageHandler({
-    brokerUrl,
-  });
+  // 等待「打字顯示」的訊息佇列 (只放 assistant)
+  const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
+  // 正在「打字中」的一條訊息
+  const [typingMessage, setTypingMessage] = useState<ChatMessage | null>(null);
+  // 是否正在打字中
+  const [isTyping, setIsTyping] = useState(false);
 
-  // 一旦元件掛載，就訂閱 "conversations/{conversationId}"
+  // 從後端訂閱
+  const { messages, subscribeTopic } = useMessageHandler({ brokerUrl });
+  console.log(messages);
+  // 訂閱對話
   useEffect(() => {
     const topic = `conversations/${conversationId}`;
     subscribeTopic(topic);
   }, [conversationId, subscribeTopic]);
 
-  // 每當 Hook 收到新 messages，就合併到 allMessages
+  // 後端回覆 (assistant 訊息) -> 進入 pendingMessages
   useEffect(() => {
     if (messages.length > 0) {
-      setAllMessages((prev) => [...prev, ...messages]);
+      const incoming = messages.map((m) => ({
+        role: "assistant",
+        content: m,
+      })) satisfies ChatMessage[];
+      setPendingMessages((prev) => [...prev, ...incoming]);
     }
   }, [messages]);
 
-  // 發送訊息
-  const handleSendMessage = async () => {
+  // pendingMessages -> 逐字打字
+  useEffect(() => {
+    if (pendingMessages.length > 0 && !isTyping) {
+      typeNextMessage();
+    }
+  }, [pendingMessages, isTyping]);
+
+  async function typeNextMessage() {
+    if (pendingMessages.length === 0) return;
+    setIsTyping(true);
+
+    // 取第一筆
+    const [nextMsg, ...others] = pendingMessages;
+    setPendingMessages(others);
+
+    // 顯示 "Thinking..."
+    setTypingMessage({ role: "assistant", content: "Thinking..." });
+    await new Promise((r) => setTimeout(r, 1000)); // 模擬思考 1 秒
+
+    // 逐字打字
+    let partial = "";
+    for (let i = 0; i < nextMsg.content.length; i++) {
+      partial += nextMsg.content[i];
+      setTypingMessage({ role: "assistant", content: partial });
+      await new Promise((r) => setTimeout(r, 10));
+    }
+
+    // 完成
+    setChatMessages((prev) => [...prev, nextMsg]);
+    setTypingMessage(null);
+    setIsTyping(false);
+  }
+
+  // 手動送出訊息
+  async function handleSendMessage() {
     if (!conversationId) return;
+    if (!inputValue.trim()) return;
+
+    await sendUserMessage(inputValue);
+    setInputValue("");
+  }
+
+  // 專門送 user 訊息 + 呼叫後端
+  async function sendUserMessage(content: string) {
     try {
-      const data = await sendMessageAPI(conversationId, inputValue);
+      setIsLoading(true);
+
+      // 1) 本地插入 user 訊息
+      const userMsg: ChatMessage = { role: "user", content };
+      setChatMessages((prev) => [...prev, userMsg]);
+
+      // 2) 呼叫 API 送出
+      const data = await sendMessageAPI(conversationId, content);
       if (data.error) {
-        alert(data.error);
-      } else {
-        setInputValue("");
+        console.error("Send message error:", data.error);
       }
     } catch (error) {
       console.error("Send message failed:", error);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }
+
+  // 載入後自動送出 initialMessages (一次)
+  const [didAutoSend, setDidAutoSend] = useState(false);
+  useEffect(() => {
+    if (!didAutoSend && initialMessages.length > 0) {
+      setDidAutoSend(true);
+
+      // 逐條送出
+      (async () => {
+        for (const msg of initialMessages) {
+          await sendUserMessage(msg);
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
 
   return (
     <div className="flex flex-col min-w-0 h-dvh bg-background">
-      {/* 2. 使用抽離後的 Header Component */}
+      {/* 頂部 header */}
       <ConversationHeader />
 
-      {/* 其餘部分依舊保留在此 */}
-      <div style={{ display: "flex", gap: "4px", marginBottom: "8px" }}>
-        <input
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Type message..."
-        />
-        <button onClick={handleSendMessage}>Send</button>
-      </div>
+      {/* 訊息列表 */}
+      <ConversationMessages
+        chatMessages={chatMessages}
+        typingMessage={typingMessage}
+      />
 
-      <div style={{ border: "1px solid #ccc", padding: "8px" }}>
-        {allMessages.map((m, i) => (
-          <p key={i}>{m}</p>
-        ))}
-      </div>
+      {/* 輸入框 */}
+      <ConversationInput
+        inputValue={inputValue}
+        onChange={(val) => setInputValue(val)}
+        onSend={handleSendMessage}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

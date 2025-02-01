@@ -24,7 +24,7 @@ export default function ConversationPage() {
   const history = useMemo<string[]>(() => {
     const base: string[] = [];
     if (initialMsg) {
-      base.push(`[User initial msg] ${initialMsg}`);
+      base.push(`${initialMsg}`);
     }
     return base;
   }, [initialMsg]);
