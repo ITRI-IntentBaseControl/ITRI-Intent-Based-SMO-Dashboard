@@ -150,7 +150,7 @@ export default function ConversationClient({
       {/* 輸入框 */}
       <ConversationInput
         inputValue={inputValue}
-        onChange={(val) => setInputValue(val)}
+        onChange={(val: any) => setInputValue(val)}
         onSend={handleSendMessage}
         isLoading={isLoading}
       />
