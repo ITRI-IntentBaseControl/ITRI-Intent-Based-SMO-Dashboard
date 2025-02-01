@@ -27,7 +27,7 @@ export default function HomePage() {
     }
   };
 
-  // 也可支援按 Enter 直接送出
+  // 按 Enter (非 Shift+Enter) 送出
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -45,43 +45,42 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* 輸入區塊 (中間 50% 寬度) */}
-      <div className="w-1/2 max-w-2xl mx-auto">
-        <div className="flex gap-2">
-          <textarea
-            value={userMessage}
-            onChange={(e) => setUserMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="在這裡輸入訊息，按 Enter 即可送出 (Shift+Enter換行)"
-            className="
-              flex-1
-              rounded-2xl
-              border
-              border-border
-              bg-muted
-              px-3
-              py-2
-              text-sm
-              leading-6
-              placeholder:text-muted-foreground
-              focus-visible:outline-none
-              focus-visible:ring-2
-              focus-visible:ring-ring
-              resize-y
-              overflow-auto
-            "
-          />
+      {/* 與 ConversationInput 相同風格的輸入框 */}
+      <div className="w-1/2 mx-auto py-4 flex flex-col gap-2 rounded-2xl border border-border bg-muted">
+        {/* 上半部：多行輸入框 */}
+        <textarea
+          value={userMessage}
+          onChange={(e) => setUserMessage(e.target.value)}
+          placeholder="在這裡輸入訊息，按 Enter 即可送出 (Shift+Enter換行)"
+          className="
+            flex-1
+            bg-muted
+            px-3
+            py-2
+            text-sm
+            leading-6
+            resize-y
+            overflow-auto
+            focus-visible:outline-none
+          "
+          onKeyDown={handleKeyDown}
+        />
+
+        {/* 下半部：右側送出按鈕 */}
+        <div className="flex justify-end">
           <Button
             onClick={handleSend}
             disabled={!userMessage.trim()}
             className="
-              rounded-xl 
-              px-4 
-              py-2 
+              rounded-xl
+              px-3
+              py-2
               h-fit
+              mt-2
+              mr-2
             "
           >
-            送出
+            →
           </Button>
         </div>
       </div>
