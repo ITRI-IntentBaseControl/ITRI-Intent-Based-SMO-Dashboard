@@ -24,49 +24,48 @@ export function ConversationInput({
   isLoading,
 }: ConversationInputProps) {
   return (
-    <div className="w-1/2 mx-auto py-4">
-      <div className="flex gap-2">
-        <textarea
-          value={inputValue}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Type message..."
-          className="
-            flex-1
-            rounded-2xl
-            border
-            border-border
-            bg-muted
-            px-3
-            py-2
-            text-sm
-            leading-6
-            placeholder:text-muted-foreground
-            focus-visible:outline-none
-            focus-visible:ring-2
-            focus-visible:ring-ring
-            resize-y
-            overflow-auto
-          "
-          // 關鍵處：監聽按鍵
-          onKeyDown={(e) => {
-            // 若按下 Enter，且沒按 Shift，則呼叫 onSend
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault(); // 阻止換行
-              onSend();
-            }
-          }}
-        />
+    <div className="w-1/2 mx-auto py-4 flex flex-col gap-2 rounded-2xl border border-border bg-muted">
+      {/* 上半部：多行輸入框 */}
+      <textarea
+        value={inputValue}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Type message..."
+        className="
+          flex-1
+          bg-muted
+          px-3
+          py-2
+          text-sm
+          leading-6
+          resize-y
+          overflow-auto
+
+          focus-visible:outline-none
+        "
+        // 按 Enter 送出，Shift+Enter 換行
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            onSend();
+          }
+        }}
+      />
+
+      {/* 下半部：右側箭頭按鈕 */}
+      <div className="flex justify-end">
         <Button
           onClick={onSend}
           disabled={isLoading}
           className="
-            rounded-xl 
-            px-4 
-            py-2 
+            rounded-xl
+            px-3
+            py-2
             h-fit
+            mt-2
+            mr-2
           "
         >
-          {isLoading ? "Sending..." : "Enter"}
+          {isLoading ? "Sending..." : "→"}
         </Button>
       </div>
     </div>
