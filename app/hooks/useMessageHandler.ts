@@ -1,4 +1,3 @@
-// app/hooks/useMessageHandler.ts
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -37,27 +36,45 @@ export function useMessageHandler({
     });
 
     client.on("message", (receivedTopic, payload) => {
+      // 若 topic 符合 currentTopic，就把新訊息「累加」進 messages
       if (receivedTopic === currentTopic) {
         setMessages([payload.toString()]);
       }
     });
 
+    // 結束時關閉連線
     return () => {
       client.end(true);
     };
   }, [brokerUrl, currentTopic]);
 
-  // 2. 手動訂閱新的 topic
-  const subscribeTopic = (newTopic: string) => {
+  /**
+   * 2. 手動訂閱新的 topic (可多加 callback, 供訂閱完成後執行下一步)
+   */
+  const subscribeTopic = (newTopic: string, onSubscribed?: () => void) => {
     const c = clientRef.current;
-    if (!c) return; // 若此時連線還沒建立完成，或還沒連上
-    // 若有舊 topic，退訂
+    if (!c) return; // 若此時連線還沒建立完成
+
+    // 若有舊 topic，先退訂
     if (currentTopic) {
-      c.unsubscribe(currentTopic);
+      c.unsubscribe(currentTopic, (err) => {
+        if (err) console.error("Unsubscribe error:", err);
+      });
     }
+
     // 訂閱新 topic
-    c.subscribe(newTopic, (err) => {});
+    c.subscribe(newTopic, (err, granted) => {
+      if (err) {
+        // console.error("Subscribe error:", err);
+      } else {
+        if (onSubscribed) onSubscribed();
+      }
+    });
+
     setCurrentTopic(newTopic);
+
+    // 若想清空舊訊息，可在此決定:
+    // setMessages([]);
   };
 
   return {

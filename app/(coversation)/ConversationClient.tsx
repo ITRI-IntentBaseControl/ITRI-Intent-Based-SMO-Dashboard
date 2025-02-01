@@ -30,27 +30,22 @@ export default function ConversationClient({
   const [inputValue, setInputValue] = useState("");
   const { open } = useSidebar();
 
-  // ** 不再把 initialMessages 放進初始 state **
-  // 讓畫面載入後再以「sendUserMessage」的形式送出
+  // 不放 initialMessages 到 state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-
-  // 等待「打字顯示」的訊息佇列 (只放 assistant)
   const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
-  // 正在「打字中」的一條訊息
   const [typingMessage, setTypingMessage] = useState<ChatMessage | null>(null);
-  // 是否正在打字中
   const [isTyping, setIsTyping] = useState(false);
 
-  // 從後端訂閱
+  // 1. 從後端訂閱
   const { messages, subscribeTopic } = useMessageHandler({ brokerUrl });
-  console.log(messages);
-  // 訂閱對話
+
+  // 2. 訂閱指定話題
   useEffect(() => {
     const topic = `conversations/${conversationId}`;
     subscribeTopic(topic);
   }, [conversationId, subscribeTopic]);
 
-  // 後端回覆 (assistant 訊息) -> 進入 pendingMessages
+  // 3. 收到後端回覆 (assistant) -> 推入 pendingMessages
   useEffect(() => {
     if (messages.length > 0) {
       const incoming = messages.map((m) => ({
@@ -61,7 +56,7 @@ export default function ConversationClient({
     }
   }, [messages]);
 
-  // pendingMessages -> 逐字打字
+  // 4. 依序打字顯示 assistant 訊息
   useEffect(() => {
     if (pendingMessages.length > 0 && !isTyping) {
       typeNextMessage();
@@ -72,13 +67,12 @@ export default function ConversationClient({
     if (pendingMessages.length === 0) return;
     setIsTyping(true);
 
-    // 取第一筆
     const [nextMsg, ...others] = pendingMessages;
     setPendingMessages(others);
 
     // 顯示 "Thinking..."
     setTypingMessage({ role: "assistant", content: "Thinking..." });
-    await new Promise((r) => setTimeout(r, 1000)); // 模擬思考 1 秒
+    await new Promise((r) => setTimeout(r, 1000)); // 模擬思考1秒
 
     // 逐字打字
     let partial = "";
@@ -94,7 +88,7 @@ export default function ConversationClient({
     setIsTyping(false);
   }
 
-  // 手動送出訊息
+  // 手動送出
   async function handleSendMessage() {
     if (!conversationId) return;
     if (!inputValue.trim()) return;
@@ -103,16 +97,16 @@ export default function ConversationClient({
     setInputValue("");
   }
 
-  // 專門送 user 訊息 + 呼叫後端
+  // 送「user」訊息
   async function sendUserMessage(content: string) {
     try {
       setIsLoading(true);
 
-      // 1) 本地插入 user 訊息
+      // 1) 前端插入
       const userMsg: ChatMessage = { role: "user", content };
       setChatMessages((prev) => [...prev, userMsg]);
 
-      // 2) 呼叫 API 送出
+      // 2) 呼叫 API
       const data = await sendMessageAPI(conversationId, content);
       if (data.error) {
         console.error("Send message error:", data.error);
@@ -124,18 +118,20 @@ export default function ConversationClient({
     }
   }
 
-  // 載入後自動送出 initialMessages (一次)
+  // 5. 首次載入後，隔個 500ms 再送出 first message
   const [didAutoSend, setDidAutoSend] = useState(false);
   useEffect(() => {
     if (!didAutoSend && initialMessages.length > 0) {
       setDidAutoSend(true);
 
-      // 逐條送出
-      (async () => {
+      // 等 0.5 秒再送出第一筆，避免 topic 尚未完成
+      const timer = setTimeout(async () => {
         for (const msg of initialMessages) {
           await sendUserMessage(msg);
         }
-      })();
+      }, 500);
+
+      return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
