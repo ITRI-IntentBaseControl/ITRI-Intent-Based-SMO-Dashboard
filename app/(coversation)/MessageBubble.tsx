@@ -16,7 +16,7 @@ interface MessageBubbleProps {
 export function MessageBubble({ msg, isTyping = false }: MessageBubbleProps) {
   const { role, content } = msg;
   const isUser = role === "user";
-  const isAssistant = role === "assistant";
+  const isAssistant = role === "llm";
 
   return (
     <div data-role={role} className="group/message w-full px-4">
