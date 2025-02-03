@@ -1,5 +1,6 @@
 "use client";
 import { postAPI } from "@/app/api/entrypoint";
+
 export const login = async (formData) => {
   try {
     const response = await postAPI("metadata_mgt/UserManager/login_user", {
@@ -15,9 +16,11 @@ export const login = async (formData) => {
       return { status: "failed" };
     }
 
-    // 解析後端回傳
-    // const result = await response.json();
-    // e.g. setCookie("token", result.token); or store in localStorage
+    // 在登入成功後，將想要的資料存到 localStorage
+    localStorage.setItem("user_uid", response.data.data.user_uid);
+
+    // 依需求可再存其他資訊
+    // localStorage.setItem("username", result.username);
 
     return { status: "success" };
   } catch (error) {

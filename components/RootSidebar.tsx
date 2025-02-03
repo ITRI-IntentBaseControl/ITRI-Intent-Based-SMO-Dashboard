@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PlusIcon } from "@/components/icons";
@@ -25,6 +26,14 @@ const FAKE_CHATS = [
 export function RootSidebar() {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
+
+  useEffect(() => {
+    // 在前端檢查 localStorage 是否有 token，若無則導向 /signin
+    const token = localStorage.getItem("user_uid");
+    if (!token) {
+      router.push("/signin");
+    }
+  }, [router]);
 
   return (
     <Sidebar className="group-data-[side=left]:border-r-0">

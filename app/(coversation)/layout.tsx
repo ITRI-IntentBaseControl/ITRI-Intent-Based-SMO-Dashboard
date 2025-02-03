@@ -23,7 +23,7 @@ export default async function Layout({
         strategy="beforeInteractive"
       />
       <SidebarProvider defaultOpen={!isCollapsed}>
-        <AppSidebar user={session?.user} />
+        <RootSidebar />
         <SidebarInset>{children}</SidebarInset>
       </SidebarProvider>
     </>
