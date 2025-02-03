@@ -1,21 +1,14 @@
+"use client";
+import { postAPI } from "@/app/api/entrypoint";
 export const login = async (formData) => {
   try {
-    const response = await fetch(
-      "http://140.118.162.94:30000/api/1.0/metadata_mgt/UserManager/login_user",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: formData.get("username"),
-          password: formData.get("password"),
-        }),
-      }
-    );
+    const response = await postAPI("metadata_mgt/UserManager/login_user", {
+      username: formData.get("username"),
+      password: formData.get("password"),
+    });
 
     // 若後端回傳非 2xx，這裡可做更細緻的錯誤處理
-    if (!response.ok) {
+    if (response.status !== 200) {
       if (response.status === 400) {
         return { status: "invalid_data" };
       }

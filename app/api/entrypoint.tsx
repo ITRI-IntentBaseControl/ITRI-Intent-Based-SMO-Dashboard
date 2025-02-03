@@ -96,17 +96,17 @@ const handleApiResponse = (response: AxiosResponse): AxiosResponse | void => {
   switch (response.status) {
     case ApiResponseStatus.SUCCESS:
       return response;
-    case ApiResponseStatus.CLIENT_ERROR:
-      console.error("Client Error:", response.data.detail);
-      break;
-    case ApiResponseStatus.METHOD_NOT_ALLOWED:
-      console.error("Method Not Allowed");
-      break;
-    case ApiResponseStatus.INTERNAL_SERVER_ERROR:
-      console.error("Internal Server Error:", response.data.detail);
-      break;
+    // case ApiResponseStatus.CLIENT_ERROR:
+    //   console.error("Client Error:", response.data.detail);
+    //   break;
+    // case ApiResponseStatus.METHOD_NOT_ALLOWED:
+    //   console.error("Method Not Allowed");
+    //   break;
+    // case ApiResponseStatus.INTERNAL_SERVER_ERROR:
+    //   console.error("Internal Server Error:", response.data.detail);
+    //   break;
     default:
-      console.error("Unknown Status:", response.data.detail);
+      return response;
   }
 };
 
@@ -119,11 +119,4 @@ const handleApiError = (error: any) => {
   }
 };
 
-
-export {
-  PROTOCAL,
-  HOST,
-  API_PORT,
-  postAPI,
-  downloadPDF, 
-};
+export { PROTOCAL, HOST, API_PORT, postAPI, downloadPDF };
