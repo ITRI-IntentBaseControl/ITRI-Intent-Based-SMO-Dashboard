@@ -10,7 +10,7 @@ export async function register(formData) {
 
     // 2. 發送 fetch 到後端
     const response = await fetch(
-      "http://140.118.162.94:30000/api/1.0/metadata_mgt/userManager/create_user",
+      "http://140.118.162.94:30000/api/1.0/metadata_mgt/UserManager/create_user",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

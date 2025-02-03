@@ -1,7 +1,7 @@
 export const login = async (formData) => {
   try {
     const response = await fetch(
-      "http://140.118.162.94:30000/api/1.0/metadata_mgt/userManager/login_user",
+      "http://140.118.162.94:30000/api/1.0/metadata_mgt/UserManager/login_user",
       {
         method: "POST",
         headers: {
