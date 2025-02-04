@@ -48,3 +48,29 @@ export async function renameConversation(conversationUid, newName) {
     throw error;
   }
 }
+
+export async function getConversationHistory(conversationUid) {
+  try {
+    // 直接使用 postAPI
+    const response = await postAPI(
+      "conversation_mgt/TextManager/get_text_list",
+      {
+        conversation_uid: conversationUid,
+      }
+    );
+
+    // 檢查回傳
+    // Axios 返回結構:
+    //   { status: number, data: { status: boolean, message: string, data: [...] } }
+    if (response.status !== 200) {
+      throw new Error(`getConversationHistory failed: ${response.status}`);
+    }
+
+    // 回傳後端 JSON
+    return response.data;
+    // e.g. { status: true, message: "...", data: [...對話列表...] }
+  } catch (error) {
+    console.error("[getConversationHistory] API Error:", error);
+    throw error;
+  }
+}

@@ -1,21 +1,25 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useMessageHandler } from "@/app/hooks/useMessageHandler";
-import { sendMessageAPI } from "@/app/api/message/route";
 import { useWindowSize } from "usehooks-ts";
 import { useSidebar } from "@/components/ui/sidebar";
 import { ConversationHeader } from "./ConversationHeader";
-
-// 子元件
 import { ConversationInput } from "./ConversationInput";
 import { ConversationMessages } from "./ConversationMessages";
 import { ChatMessage } from "./MessageBubble";
 
+// WebSocket / Stomp Hooks
+import { useMessageHandler } from "@/app/hooks/useMessageHandler";
+import { sendMessageAPI } from "@/app/api/message/route";
+
+// 從我們新建立的 conversationService 匯入
+import { getConversationHistory } from "./service";
+
 interface Props {
   conversationId: string;
-  /** 由 SSR 或 root page 帶入的初始訊息，多半視為 user 所發起 */
+  /** 可選：由 URL 或其他來源帶入的初始訊息 */
   initialMessages?: string[];
+  /** WebSocket broker 的 URL */
   brokerUrl: string;
 }
 
@@ -25,27 +29,62 @@ export default function ConversationClient({
   brokerUrl,
 }: Props) {
   const { width } = useWindowSize();
-  const [isSidebarOpen] = useState(width > 768);
-  const [isLoading, setIsLoading] = useState(false);
-  const [inputValue, setInputValue] = useState("");
   const { open } = useSidebar();
 
-  // 不放 initialMessages 到 state
+  const [isLoading, setIsLoading] = useState(false);
+  const [inputValue, setInputValue] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  // 「等待打字中」或「尚未輸出完整」的訊息
   const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
   const [typingMessage, setTypingMessage] = useState<ChatMessage | null>(null);
   const [isTyping, setIsTyping] = useState(false);
 
-  // 1. 從後端訂閱
-  const { messages, subscribeTopic } = useMessageHandler({ brokerUrl });
-
-  // 2. 訂閱指定話題
+  // 1. 取得歷史紀錄
   useEffect(() => {
+    if (!conversationId) return;
+    setIsLoading(true);
+
+    getConversationHistory(conversationId)
+      .then((data) => {
+        // data = { status: true, message: "...", data: [...] }
+        if (data.status === true && Array.isArray(data.data)) {
+          // 將 data.data 轉成前端需要的 chatMessages 格式
+          const mapped = data.data.map((item: any) => {
+            // 後端 role: 'user' 或 'llm'
+            // 前端若要將 llm => assistant，可以這樣:
+            const role = item.role;
+
+            // 將 text_content 裡的 content 用換行拼起來
+            const content = item.text_content
+              .map((t: any) => t.content)
+              .filter(Boolean)
+              .join("\n");
+
+            return { role, content } as ChatMessage;
+          });
+          setChatMessages(mapped);
+        } else {
+          console.error("API 回傳結構不符合預期:", data);
+        }
+      })
+      .catch((err) => {
+        console.error("fetchConversationHistory error:", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [conversationId]);
+
+  // 2. WebSocket: 從後端訂閱特定話題
+  const { messages, subscribeTopic } = useMessageHandler({ brokerUrl });
+  useEffect(() => {
+    if (!conversationId) return;
     const topic = `conversations/${conversationId}`;
     subscribeTopic(topic);
   }, [conversationId, subscribeTopic]);
 
-  // 3. 收到後端回覆 (assistant) -> 推入 pendingMessages
+  // 收到後端 (assistant) 新訊息 => 推到 pendingMessages
   useEffect(() => {
     if (messages.length > 0) {
       const incoming = messages.map((m) => ({
@@ -56,7 +95,7 @@ export default function ConversationClient({
     }
   }, [messages]);
 
-  // 4. 依序打字顯示 assistant 訊息
+  // 3. 模擬逐字打字
   useEffect(() => {
     if (pendingMessages.length > 0 && !isTyping) {
       typeNextMessage();
@@ -72,9 +111,8 @@ export default function ConversationClient({
 
     // 顯示 "Thinking..."
     setTypingMessage({ role: "assistant", content: "Thinking..." });
-    await new Promise((r) => setTimeout(r, 1000)); // 模擬思考1秒
+    await new Promise((r) => setTimeout(r, 500));
 
-    // 逐字打字
     let partial = "";
     for (let i = 0; i < nextMsg.content.length; i++) {
       partial += nextMsg.content[i];
@@ -82,59 +120,54 @@ export default function ConversationClient({
       await new Promise((r) => setTimeout(r, 10));
     }
 
-    // 完成
     setChatMessages((prev) => [...prev, nextMsg]);
     setTypingMessage(null);
     setIsTyping(false);
   }
 
-  // 手動送出
+  // 4. 手動送出訊息
   async function handleSendMessage() {
     if (!conversationId) return;
     if (!inputValue.trim()) return;
 
-    await sendUserMessage(inputValue);
+    const content = inputValue.trim();
     setInputValue("");
+
+    await sendUserMessage(content);
   }
 
-  // 送「user」訊息
+  // 寫入 user 訊息 -> 後端 API -> WS 廣播
   async function sendUserMessage(content: string) {
     try {
       setIsLoading(true);
 
-      // 1) 前端插入
       const userMsg: ChatMessage = { role: "user", content };
       setChatMessages((prev) => [...prev, userMsg]);
 
-      // 2) 呼叫 API
       const data = await sendMessageAPI(conversationId, content);
       if (data.error) {
         console.error("Send message error:", data.error);
       }
     } catch (error) {
-      console.error("Send message failed:", error);
+      console.error("Send user message failed:", error);
     } finally {
       setIsLoading(false);
     }
   }
 
-  // 5. 首次載入後，隔個 500ms 再送出 first message
+  // 5. 初始訊息（若 URL 帶 ?msg=xxx）
   const [didAutoSend, setDidAutoSend] = useState(false);
   useEffect(() => {
+    if (!conversationId) return;
     if (!didAutoSend && initialMessages.length > 0) {
       setDidAutoSend(true);
-
-      // 等 0.5 秒再送出第一筆，避免 topic 尚未完成
-      const timer = setTimeout(async () => {
+      setTimeout(async () => {
         for (const msg of initialMessages) {
           await sendUserMessage(msg);
         }
       }, 500);
-
-      return () => clearTimeout(timer);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId]);
+  }, [conversationId, initialMessages, didAutoSend]);
 
   return (
     <div className="flex flex-col min-w-0 h-dvh bg-background">
@@ -150,7 +183,7 @@ export default function ConversationClient({
       {/* 輸入框 */}
       <ConversationInput
         inputValue={inputValue}
-        onChange={(val: any) => setInputValue(val)}
+        onChange={(val) => setInputValue(val)}
         onSend={handleSendMessage}
         isLoading={isLoading}
       />
