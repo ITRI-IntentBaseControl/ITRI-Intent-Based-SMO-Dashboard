@@ -9,7 +9,7 @@ import { ConversationInput } from "./ConversationInput";
 import { ConversationMessages } from "./ConversationMessages";
 import { ChatMessage } from "./MessageBubble";
 
-import { getConversationHistory } from "./service";
+import { getConversationHistory } from "./ExternalService/apiservice";
 
 interface Props {
   conversationId: string; // 路由參數: conversation_uid
