@@ -10,11 +10,11 @@ export default function ConversationPage() {
   // 透過 useSearchParams() 取得網址列上的查詢字串 (例如 ?msg=Hello)
   const searchParams = useSearchParams();
   const initialMsg = searchParams.get("msg") || "";
+
   return (
     <ConversationClient
       conversationId={conversation_uid}
       initialMessages={initialMsg ? [initialMsg] : []}
-      brokerUrl="ws://140.118.2.52:42804"
     />
   );
 }

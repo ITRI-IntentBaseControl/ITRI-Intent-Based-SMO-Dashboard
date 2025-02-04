@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createConversation } from "@/app/api/conversation/route";
 import { Button } from "@/components/ui/button";
@@ -8,19 +8,33 @@ import { Button } from "@/components/ui/button";
 export default function HomePage() {
   const router = useRouter();
   const [userMessage, setUserMessage] = useState("");
+  const [userUid, setUserUid] = useState<string | null>(null);
+
+  // 在元件載入時從 localStorage 抓取 user_uid
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUserUid = localStorage.getItem("user_uid");
+      setUserUid(storedUserUid);
+    }
+  }, []);
 
   // 當使用者輸入訊息後
   const handleSend = async () => {
     try {
-      // 1. 呼叫 API 來建立 Conversation
-      const data = await createConversation();
-      // 假設後端回傳 { conversationId, topic }...
-      const conversationId = data.conversationId;
+      // 確認有取得 userUid 才進行 API 呼叫
+      if (!userUid) {
+        alert("無法取得使用者ID，請確認 localStorage 是否已儲存 user_uid。");
+        return;
+      }
 
-      // 2. 轉跳到 /conversation/[uid]，把使用者輸入的訊息帶入 QueryString (可自由決定要不要)
-      router.push(
-        `/conversation/${conversationId}?msg=${encodeURIComponent(userMessage)}`
-      );
+      // 1. 呼叫 API 來建立 Conversation
+      const data = await createConversation(userUid);
+
+      // 假設後端回傳 { conversationId, topic }...
+      const conversation_uid = data.data.conversation_uid;
+
+      // 2. 導頁到 /conversation/[conversationId]，把使用者輸入的訊息帶入 QueryString
+      router.push(`/conversation/${conversation_uid}`);
     } catch (error) {
       console.error("Create conversation error:", error);
       alert("建立對話失敗，請稍後再試。");
