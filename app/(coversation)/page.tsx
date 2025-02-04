@@ -27,14 +27,21 @@ export default function HomePage() {
         return;
       }
 
+      // 若沒有輸入內容，也可考慮直接不允許建立對話 (看需求而定)
+      if (!userMessage.trim()) {
+        alert("請先輸入訊息");
+        return;
+      }
+
       // 1. 呼叫 API 來建立 Conversation
       const data = await createConversation(userUid);
 
-      // 假設後端回傳 { conversationId, topic }...
+      // 從後端回傳資料中取得 conversation_uid
       const conversation_uid = data.data.conversation_uid;
 
-      // 2. 導頁到 /conversation/[conversationId]，把使用者輸入的訊息帶入 QueryString
-      router.push(`/conversation/${conversation_uid}`);
+      // 2. 導頁到 /conversation/[conversation_uid]，將使用者輸入的訊息帶入 QueryString (如 ?msg=Hello)
+      const encodedMsg = encodeURIComponent(userMessage);
+      router.push(`/conversation/${conversation_uid}?msg=${encodedMsg}`);
     } catch (error) {
       console.error("Create conversation error:", error);
       alert("建立對話失敗，請稍後再試。");
@@ -59,7 +66,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* 與 ConversationInput 相同風格的輸入框 */}
+      {/* 輸入框區域 */}
       <div className="w-1/2 mx-auto py-4 flex flex-col gap-2 rounded-2xl border border-border bg-muted">
         {/* 上半部：多行輸入框 */}
         <textarea
