@@ -32,22 +32,16 @@ import {
   renameConversation,
 } from "./service";
 
-// 若使用 TypeScript，可宣告資料格式 (JS 則可省略)
-interface ConversationItem {
-  conversation_uid: string;
-  conversation_name: string;
-  conversation_path: string;
-  created_at: string;
-  updated_at: string;
-  user_uid: string;
-}
-
+/**
+ * RootSidebar:
+ * - 讀取使用者 conversationList 並顯示於側邊欄
+ * - 提供新增、重新命名、刪除對話的功能
+ */
 export function RootSidebar() {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
-  const [conversationList, setConversationList] = useState<ConversationItem[]>(
-    []
-  );
+  // 將 useState 直接使用陣列，不再指定型別
+  const [conversationList, setConversationList] = useState([]);
 
   useEffect(() => {
     const userUid = localStorage.getItem("user_uid");
@@ -73,7 +67,7 @@ export function RootSidebar() {
   }, [router]);
 
   // 刪除對話
-  const handleDelete = async (conversationUid: string) => {
+  const handleDelete = async (conversationUid) => {
     try {
       const data = await deleteConversation(conversationUid);
       if (data?.status === true) {
@@ -90,13 +84,13 @@ export function RootSidebar() {
   };
 
   // 更改對話名稱
-  const handleRename = async (conversation: ConversationItem) => {
+  const handleRename = async (conversation) => {
     // 簡單示範用 prompt 輸入新名稱，可改成 Modal
     const newName = prompt(
       "請輸入新的對話名稱",
       conversation.conversation_name
     );
-    if (!newName || !newName.trim()) return; // 使用者取消或輸入空白不處理
+    if (!newName || !newName.trim()) return; // 使用者取消或輸入空白則不處理
 
     try {
       const data = await renameConversation(
@@ -145,6 +139,8 @@ export function RootSidebar() {
               onClick={() => {
                 setOpenMobile(false);
                 router.push("/");
+                // 注意: 部分版本的 Next 可能不支援 refresh()，
+                // 若出現錯誤可移除或改用其他刷新方式
                 router.refresh();
               }}
             >

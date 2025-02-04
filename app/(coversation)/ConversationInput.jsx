@@ -10,19 +10,8 @@ import { Button } from "@/components/ui/button";
  * - onSend: 送出訊息動作
  * - isLoading: 是否正在送出中
  */
-interface ConversationInputProps {
-  inputValue: string;
-  onChange: (value: string) => void;
-  onSend: () => void;
-  isLoading: boolean;
-}
 
-export function ConversationInput({
-  inputValue,
-  onChange,
-  onSend,
-  isLoading,
-}: ConversationInputProps) {
+export function ConversationInput({ inputValue, onChange, onSend, isLoading }) {
   return (
     <div className="w-1/2 mx-auto py-4 flex flex-col gap-2 rounded-2xl border border-border bg-muted">
       {/* 上半部：多行輸入框 */}
@@ -39,7 +28,6 @@ export function ConversationInput({
           leading-6
           resize-y
           overflow-auto
-
           focus-visible:outline-none
         "
         // 按 Enter 送出，Shift+Enter 換行

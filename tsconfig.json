@@ -28,6 +28,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "next.config.js"
-, "app/(auth_init)/signin/service.jsx", "app/(auth_init)/signin/page.jsx", "app/(coversation)/components/chat/icons.jsx"  ],
+, "app/(auth_init)/signin/service.jsx", "app/(auth_init)/signin/page.jsx", "app/(coversation)/components/chat/icons.jsx", "app/(coversation)/ConversationHeader.jsx", "app/(coversation)/ConversationInput.jsx", "app/(coversation)/ConversationMessages.jsx", "app/(coversation)/MessageBubble.jsx", "app/(coversation)/RootSidebar.jsx", "app/(coversation)/ConversationClient.jsx", "app/(coversation)/page.jsx", "app/(coversation)/conversation/[conversation_uid]/page.jsx", "app/(coversation)/layout.jsx"  ],
   "exclude": ["node_modules"]
 }

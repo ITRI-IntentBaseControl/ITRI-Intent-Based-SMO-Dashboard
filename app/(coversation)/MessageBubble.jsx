@@ -3,20 +3,19 @@
 import React from "react";
 import { SparklesIcon } from "@/components/icons";
 
-export interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
-interface MessageBubbleProps {
-  msg: ChatMessage;
-  isTyping?: boolean;
-}
-
-export function MessageBubble({ msg, isTyping = false }: MessageBubbleProps) {
+/**
+ * ChatMessage:
+ * - role: 角色，可為 "user" 或 "assistant"
+ * - content: 文字內容
+ *
+ * MessageBubbleProps:
+ * - msg: ChatMessage 物件
+ * - isTyping: 是否正在打字中 (可選)
+ */
+export function MessageBubble({ msg, isTyping = false }) {
   const { role, content } = msg;
   const isUser = role === "user";
-  const isAssistant = role === "llm";
+  const isAssistant = role === "llm"; // 若與後端實際傳回的角色不符，可自行調整
 
   return (
     <div data-role={role} className="group/message w-full px-4">
@@ -27,7 +26,7 @@ export function MessageBubble({ msg, isTyping = false }: MessageBubbleProps) {
           </div>
         )}
 
-        {/* 
+        {/*
           1) `whitespace-pre-wrap break-words`：確保長字串會換行
           2) User：max-w-[50%]
           3) Assistant：max-w-[80%]

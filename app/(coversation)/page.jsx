@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 export default function HomePage() {
   const router = useRouter();
   const [userMessage, setUserMessage] = useState("");
-  const [userUid, setUserUid] = useState<string | null>(null);
+  const [userUid, setUserUid] = useState(null);
 
   // 在元件載入時從 localStorage 抓取 user_uid
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function HomePage() {
   };
 
   // 按 Enter (非 Shift+Enter) 送出
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
