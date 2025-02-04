@@ -74,3 +74,16 @@ export async function getConversationHistory(conversationUid) {
     throw error;
   }
 }
+
+/**
+ * 建立對話
+ * @returns { conversationId, topic }
+ */
+export async function createConversation(user_uid) {
+  // 對後端 "create-conversation" 端點發送 POST 請求
+  const response = await postAPI(
+    "conversation_mgt/ConversationManager/create_conversation",
+    { user_uid }
+  );
+  return response.data;
+}

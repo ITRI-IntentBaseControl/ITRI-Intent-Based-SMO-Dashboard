@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createConversation } from "@/app/api/conversation/route";
+import { createConversation } from "./service";
 import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
@@ -27,21 +27,22 @@ export default function HomePage() {
         return;
       }
 
-      // 若沒有輸入內容，也可考慮直接不允許建立對話 (看需求而定)
       if (!userMessage.trim()) {
         alert("請先輸入訊息");
         return;
       }
 
-      // 1. 呼叫 API 來建立 Conversation
+      // 1. 呼叫後端 API 建立新的對話
       const data = await createConversation(userUid);
 
       // 從後端回傳資料中取得 conversation_uid
       const conversation_uid = data.data.conversation_uid;
 
-      // 2. 導頁到 /conversation/[conversation_uid]，將使用者輸入的訊息帶入 QueryString (如 ?msg=Hello)
-      const encodedMsg = encodeURIComponent(userMessage);
-      router.push(`/conversation/${conversation_uid}?msg=${encodedMsg}`);
+      // 2. 將使用者輸入的訊息暫存到 localStorage
+      localStorage.setItem(`init_msg_${conversation_uid}`, userMessage);
+
+      // 3. 導頁到 /conversation/[conversation_uid]
+      router.push(`/conversation/${conversation_uid}`);
     } catch (error) {
       console.error("Create conversation error:", error);
       alert("建立對話失敗，請稍後再試。");
@@ -58,7 +59,6 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-background">
-      {/* 標題與簡介 */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">ITRI Intent Base Chatbot</h1>
         <p className="text-sm text-muted-foreground">
@@ -66,9 +66,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* 輸入框區域 */}
       <div className="w-1/2 mx-auto py-4 flex flex-col gap-2 rounded-2xl border border-border bg-muted">
-        {/* 上半部：多行輸入框 */}
         <textarea
           value={userMessage}
           onChange={(e) => setUserMessage(e.target.value)}
@@ -87,7 +85,6 @@ export default function HomePage() {
           onKeyDown={handleKeyDown}
         />
 
-        {/* 下半部：右側送出按鈕 */}
         <div className="flex justify-end">
           <Button
             onClick={handleSend}

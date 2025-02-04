@@ -9,40 +9,36 @@ import { ConversationInput } from "./ConversationInput";
 import { ConversationMessages } from "./ConversationMessages";
 import { ChatMessage } from "./MessageBubble";
 
-// 若仍保留後端歷史紀錄 API，可匯入
+// 若需要載入歷史紀錄
 import { getConversationHistory } from "./service";
 
-/**
- * ChatMessage: 前端顯示的訊息資料結構
- * role: "user" | "llm"
- * content: string
- */
 interface Props {
   conversationId: string; // 路由參數: conversation_uid
-  initialMessages?: string[]; // 例如從 URL 帶入的初始訊息(?msg=xxx)
 }
 
-// event_type 與 role 的對應示範，可自行依後端實際規劃調整
+// event_type 與 role 對應
 const ROLE_MAPPING: Record<string, ChatMessage["role"]> = {
   user_message: "user",
   llm_message: "llm",
-  // 可擴充更多 event_type => role
 };
 
-export default function ConversationClient({
-  conversationId,
-  initialMessages = [],
-}: Props) {
+export default function ConversationClient({ conversationId }: Props) {
   const { width } = useWindowSize();
   const { open } = useSidebar();
 
-  // WebSocket 連線參考
+  // --------------------------
+  // State區域
+  // --------------------------
+  // 用 useRef 儲存 WebSocket 物件
   const wsRef = useRef<WebSocket | null>(null);
 
-  // 是否正在載入(例如載入歷史紀錄 or 送出訊息)
+  // 是否正在載入(例如歷史紀錄 or 送出訊息)
   const [isLoading, setIsLoading] = useState(false);
 
-  // 使用者在輸入框的文字
+  // WebSocket 是否已成功連線
+  const [isWsConnected, setIsWsConnected] = useState(false);
+
+  // 輸入框內容
   const [inputValue, setInputValue] = useState("");
 
   // 聊天室中已顯示的訊息
@@ -53,7 +49,12 @@ export default function ConversationClient({
   const [typingMessage, setTypingMessage] = useState<ChatMessage | null>(null);
   const [isTyping, setIsTyping] = useState(false);
 
+  // 是否已經自動送出過「初始訊息」
+  const [didAutoSend, setDidAutoSend] = useState(false);
+
+  // --------------------------
   // 1. (可選) 載入歷史紀錄
+  // --------------------------
   useEffect(() => {
     if (!conversationId) return;
     setIsLoading(true);
@@ -62,7 +63,7 @@ export default function ConversationClient({
       .then((data) => {
         if (data.status === true && Array.isArray(data.data)) {
           const mapped = data.data.map((item: any) => {
-            const role = item.role; // 由後端決定
+            const role = item.role;
             const content = item.text_content
               .map((t: any) => t.content)
               .join("\n");
@@ -79,7 +80,9 @@ export default function ConversationClient({
       });
   }, [conversationId]);
 
+  // --------------------------
   // 2. 建立原生 WebSocket 連線
+  // --------------------------
   useEffect(() => {
     if (!conversationId) return;
 
@@ -89,6 +92,7 @@ export default function ConversationClient({
 
     socket.onopen = () => {
       console.log("[WebSocket] connected:", wsUrl);
+      setIsWsConnected(true); // 連線成功後，將 isWsConnected 設為 true
     };
 
     socket.onmessage = (evt) => {
@@ -106,7 +110,6 @@ export default function ConversationClient({
           // 若要模擬逐字打字
           setPendingMessages((prev) => [...prev, { role, content }]);
         } else {
-          // user 或其他角色，直接顯示
           setChatMessages((prev) => [...prev, { role, content }]);
         }
       } catch (err) {
@@ -120,15 +123,18 @@ export default function ConversationClient({
 
     socket.onclose = () => {
       console.log("[WebSocket] disconnected");
+      setIsWsConnected(false); // 斷線後設為 false，看是否要重連
     };
 
-    // 離開時關閉連線
+    // 離開此頁時，關閉連線
     return () => {
       socket.close();
     };
   }, [conversationId]);
 
+  // --------------------------
   // 3. 逐字打字效果
+  // --------------------------
   useEffect(() => {
     if (pendingMessages.length > 0 && !isTyping) {
       typeNextMessage();
@@ -142,7 +148,7 @@ export default function ConversationClient({
     const [nextMsg, ...others] = pendingMessages;
     setPendingMessages(others);
 
-    // 顯示一個 "Thinking..." (可自行替換為其他提示)
+    // 顯示一個 "Thinking..."
     setTypingMessage({ role: "llm", content: "Thinking..." });
     await new Promise((r) => setTimeout(r, 500));
 
@@ -159,7 +165,9 @@ export default function ConversationClient({
     setIsTyping(false);
   }
 
-  // 4. 使用者送出訊息 => 經由 WebSocket 傳給後端
+  // --------------------------
+  // 4. 使用者送出訊息
+  // --------------------------
   async function handleSendMessage(message?: string) {
     if (!conversationId) return;
     const content = (message ?? inputValue).trim();
@@ -179,7 +187,7 @@ export default function ConversationClient({
         text_content: [
           {
             type: "message",
-            content: content,
+            content,
           },
         ],
       },
@@ -196,20 +204,24 @@ export default function ConversationClient({
     }
   }
 
-  // 5. 若有 initialMessages，進入頁面時自動送出
-  const [didAutoSend, setDidAutoSend] = useState(false);
+  // --------------------------
+  // 5. 確保 WebSocket 已連線後，再發送「初始訊息」
+  // --------------------------
   useEffect(() => {
-    if (!conversationId) return;
-    if (!didAutoSend && initialMessages.length > 0) {
+    // 只執行一次：尚未自動發送 & 確定 WebSocket 已連線
+    if (!didAutoSend && isWsConnected) {
+      const key = `init_msg_${conversationId}`;
+      const initMsg = localStorage.getItem(key);
+      if (initMsg) {
+        // 有暫存的初始訊息 -> 自動送出
+        handleSendMessage(initMsg);
+
+        // 送完後刪除，避免重新整理時又重送
+        localStorage.removeItem(key);
+      }
       setDidAutoSend(true);
-      setTimeout(() => {
-        initialMessages.forEach((msg) => {
-          // 這裡直接把要傳的訊息當作參數帶進去
-          handleSendMessage(msg);
-        });
-      }, 500);
     }
-  }, [conversationId, initialMessages, didAutoSend]);
+  }, [didAutoSend, isWsConnected, conversationId]);
 
   return (
     <div className="flex flex-col min-w-0 h-dvh bg-background">
