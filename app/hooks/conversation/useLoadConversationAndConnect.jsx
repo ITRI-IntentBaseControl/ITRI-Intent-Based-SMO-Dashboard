@@ -13,7 +13,8 @@ import { createWebSocketService } from "../../service/conversation/ExternalServi
 export function useLoadConversationAndConnect(conversationId, onMessage) {
   const wsServiceRef = useRef(null);
   const onMessageRef = useRef(onMessage);
-
+  const HOST = process.env.HOST;
+  const API_PORT = process.env.API_PORT;
   // 每次 render 都更新 ref 的 current，以保持最新 callback
   onMessageRef.current = onMessage;
 
@@ -35,7 +36,7 @@ export function useLoadConversationAndConnect(conversationId, onMessage) {
         }
 
         // 2) 建立 WebSocket 連線
-        const wsUrl = `ws://140.118.162.94:30000/ws/conversation/${conversationId}`;
+        const wsUrl = `ws://${HOST}:${API_PORT}/ws/conversation/${conversationId}`;
         const service = createWebSocketService({
           url: wsUrl,
           onOpen: () => {

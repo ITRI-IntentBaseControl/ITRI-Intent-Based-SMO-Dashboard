@@ -40,9 +40,14 @@ export function inboundMessageDecorator(rawData) {
  * @param {string} eventType - 與後端協定，如 "test" 或 "message"
  * @returns {object}
  */
-export function outboundMessageDecorator(content, eventType = "test") {
+export function outboundMessageDecorator(
+  content,
+  eventType = "test",
+  conversation_uid
+) {
   return {
     event_type: eventType,
+    conversation_uid: conversation_uid,
     text: {
       text_content: [{ type: "message", content }],
     },
