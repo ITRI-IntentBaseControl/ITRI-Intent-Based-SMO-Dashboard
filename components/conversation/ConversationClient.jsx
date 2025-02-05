@@ -9,7 +9,7 @@ import { ConversationInput } from "./ConversationInput";
 import { ConversationMessages } from "./ConversationMessages";
 
 // 從自訂 hook 匯入
-import { useConversation } from "./hooks/useConversation";
+import { useConversation } from "../../app/hooks/conversation/useConversation";
 
 export default function ConversationClient({ conversationId }) {
   const { width } = useWindowSize();

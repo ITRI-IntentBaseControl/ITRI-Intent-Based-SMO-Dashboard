@@ -1,6 +1,6 @@
 "use client";
 
-import { postAPI } from "@/app/api/entrypoint";
+import { postAPI } from "@/app/utils/entrypoint";
 
 /** 取得指定使用者的對話列表 */
 export async function getConversationList(userUid) {

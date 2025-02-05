@@ -30,7 +30,7 @@ import {
   getConversationList,
   deleteConversation,
   renameConversation,
-} from "./ExternalService/apiService";
+} from "../../app/service/conversation/ExternalService/apiService";
 
 /**
  * RootSidebar:

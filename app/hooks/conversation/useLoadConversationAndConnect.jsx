@@ -2,8 +2,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getConversationHistory } from "../ExternalService/apiService";
-import { createWebSocketService } from "../ExternalService/websocketService";
+import { getConversationHistory } from "../../service/conversation/ExternalService/apiService";
+import { createWebSocketService } from "../../service/conversation/ExternalService/websocketService";
 
 /**
  *

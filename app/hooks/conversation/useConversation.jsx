@@ -3,7 +3,7 @@ import { useCallback, useState, useRef } from "react";
 import {
   inboundMessageDecorator,
   outboundMessageDecorator,
-} from "../InternalService/messageDecorator";
+} from "../../service/conversation/InternalService/messageDecorator";
 import { useLoadConversationAndConnect } from "./useLoadConversationAndConnect";
 import { useTypingEffect } from "./useTypingQueue";
 

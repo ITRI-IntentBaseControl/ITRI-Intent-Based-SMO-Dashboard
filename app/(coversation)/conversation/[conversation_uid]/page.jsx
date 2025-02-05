@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import ConversationClient from "../../ConversationClient";
+import ConversationClient from "../../../../components/conversation/ConversationClient";
 
 export default function ConversationPage() {
   // 透過 useParams() 取得動態路由 [conversation_uid] 的值

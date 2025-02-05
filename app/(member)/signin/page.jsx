@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { AuthForm } from "@/components/auth-form";
 import { SubmitButton } from "@/components/submit-button";
-import { login } from "./service";
+import { login } from "../../service/signin/ExternalService/siginService";
 
 export default function Page() {
   const router = useRouter();

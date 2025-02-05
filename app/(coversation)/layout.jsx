@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { RootSidebar } from "@/app/(coversation)/RootSidebar";
+import { RootSidebar } from "@/components/conversation/RootSidebar";
 import { auth } from "../(auth)/auth";
 import Script from "next/script";
 

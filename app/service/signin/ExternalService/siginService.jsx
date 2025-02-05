@@ -1,5 +1,5 @@
 "use client";
-import { postAPI } from "@/app/api/entrypoint";
+import { postAPI } from "@/app/utils/entrypoint";
 
 export const login = async (formData) => {
   try {

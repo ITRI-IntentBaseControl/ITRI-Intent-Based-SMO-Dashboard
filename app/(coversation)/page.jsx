@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createConversation } from "./ExternalService/apiService";
+import { createConversation } from "../service/conversation/ExternalService/apiService";
 import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
