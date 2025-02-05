@@ -1,16 +1,20 @@
-// 檔名：/hooks/useConversation.js
+// 檔案路徑：/hooks/useConversation.js
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getConversationHistory } from "../ExternalService/apiservice"; // 依實際檔案位置調整
 
-/**
- * 自訂 Hook：負責管理整個對話邏輯
- *
- * @param {string} conversationId - 後端提供的對話 ID
- */
+// 1) ExternalService
+import { getConversationHistory } from "../ExternalService/apiService";
+import { createWebSocketService } from "../ExternalService/websocketService";
+
+// 2) InternalService
+import {
+  inboundMessageDecorator,
+  outboundMessageDecorator,
+} from "../InternalService/messageDecorator";
+
 export function useConversation(conversationId) {
-  const wsRef = useRef(null);
+  const wsServiceRef = useRef(null); // 存放我們建立的 WebSocket Service
 
   // 狀態
   const [isLoading, setIsLoading] = useState(false);
@@ -28,12 +32,6 @@ export function useConversation(conversationId) {
   // 是否自動發送過「初始訊息」
   const [didAutoSend, setDidAutoSend] = useState(false);
 
-  // event_type 與 role 對應
-  const ROLE_MAPPING = {
-    user_message: "user",
-    llm_message: "llm",
-  };
-
   // --------------------------
   // 1. 主流程：先載入歷史，再連線 WebSocket
   // --------------------------
@@ -48,43 +46,50 @@ export function useConversation(conversationId) {
         const res = await getConversationHistory(conversationId);
         if (res.status === true && Array.isArray(res.data)) {
           const mapped = res.data.map((item) => {
-            const role = item.role;
-            const content = item.text_content.map((t) => t.content).join("\n");
-            return { role, content };
+            // 這裡也可用 messageDecorator 做格式轉換
+            // 若後端的格式較複雜，可以再做一層 parse
+            return {
+              role: item.role, // e.g. "user" or "llm"
+              content: item.text_content.map((t) => t.content).join("\n"),
+            };
           });
           setChatMessages(mapped);
         }
 
         // (2) 建立 WebSocket 連線
         const wsUrl = `ws://140.118.162.94:30000/ws/conversation/${conversationId}`;
-        const socket = new WebSocket(wsUrl);
-        wsRef.current = socket;
-
-        // 綁定事件
-        socket.onopen = () => {
-          console.log("[WebSocket] connected:", wsUrl);
-          setIsWsConnected(true);
-          handleAutoSend(socket);
-        };
-
-        socket.onmessage = (evt) => {
-          handleReceivedMessage(evt.data);
-        };
-
-        socket.onerror = (err) => {
-          console.error("[WebSocket] error:", err);
-        };
-
-        socket.onclose = () => {
-          console.log("[WebSocket] disconnected");
-          setIsWsConnected(false);
-        };
+        const service = createWebSocketService({
+          url: wsUrl,
+          onOpen: () => {
+            console.log("[WebSocket] connected:", wsUrl);
+            setIsWsConnected(true);
+            handleAutoSend(); // 確保已連線後，再檢查是否要發送初始訊息
+          },
+          onMessage: (evt) => {
+            handleReceivedMessage(evt.data);
+          },
+          onError: (err) => {
+            console.error("[WebSocket] error:", err);
+          },
+          onClose: () => {
+            console.log("[WebSocket] disconnected");
+            setIsWsConnected(false);
+          },
+        });
+        wsServiceRef.current = service;
       } catch (err) {
-        console.error("Load conversation or connect WS error:", err);
+        console.error("[useConversation] init error:", err);
       } finally {
         setIsLoading(false);
       }
     })();
+
+    // 若想在 component unmount 時關閉 WebSocket，可加 return
+    return () => {
+      if (wsServiceRef.current) {
+        wsServiceRef.current.close();
+      }
+    };
   }, [conversationId]);
 
   // --------------------------
@@ -101,40 +106,29 @@ export function useConversation(conversationId) {
   // --------------------------
   // a) 處理收訊息
   function handleReceivedMessage(rawData) {
-    try {
-      const data = JSON.parse(rawData);
-      const { event_type, text } = data;
-      const role = ROLE_MAPPING[event_type] || "llm";
+    const message = inboundMessageDecorator(rawData);
+    if (!message) return; // 解析失敗則跳過
 
-      const content =
-        text?.text_content
-          ?.map((t) => t.content)
-          .filter(Boolean)
-          .join("\n") || "";
-
-      if (role === "llm") {
-        // 若要做逐字打字效果，把它放到 pendingMessages
-        setPendingMessages((prev) => [...prev, { role, content }]);
-      } else {
-        // user / other 角色，直接顯示
-        setChatMessages((prev) => [...prev, { role, content }]);
-      }
-    } catch (err) {
-      console.error("[WebSocket] parse error:", err, rawData);
+    if (message.role === "llm") {
+      // 若要做逐字打字效果，把它放到 pendingMessages
+      setPendingMessages((prev) => [...prev, message]);
+    } else {
+      // user / other 角色，直接顯示
+      setChatMessages((prev) => [...prev, message]);
     }
   }
 
   // b) 自動發送初始訊息
-  function handleAutoSend(socket) {
+  function handleAutoSend() {
     if (didAutoSend) return;
     const key = `init_msg_${conversationId}`;
     const initMsg = localStorage.getItem(key);
     if (initMsg) {
-      // 有暫存的「初始訊息」 -> 送出
-      sendMessage(initMsg, socket);
-
-      // 若要避免「下次刷新」又重發，可以移除
-      localStorage.removeItem(key);
+      // 先前端顯示訊息
+      setChatMessages((prev) => [...prev, { role: "user", content: initMsg }]);
+      // 發送
+      sendMessage(initMsg);
+      localStorage.removeItem(key); // 避免下次刷新又重發
     }
     setDidAutoSend(true);
   }
@@ -178,27 +172,17 @@ export function useConversation(conversationId) {
     const userMsg = { role: "user", content };
     setChatMessages((prev) => [...prev, userMsg]);
 
-    // 若連線已開啟，才發送
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      sendMessage(content, wsRef.current);
-    } else {
-      console.error("[WebSocket] not connected or not open.");
-    }
+    // 真正發送
+    sendMessage(content);
   }
 
-  // e) 發送消息到 WebSocket
-  function sendMessage(content, socket) {
-    const payload = {
-      event_type: "test", // 與後端協定好的事件類型
-      text: {
-        text_content: [{ type: "message", content }],
-      },
-    };
-    try {
-      socket.send(JSON.stringify(payload));
-    } catch (err) {
-      console.error("[WebSocket] send error:", err);
-    }
+  // e) 發送消息 (呼叫 WebSocket Service)
+  function sendMessage(content) {
+    if (!wsServiceRef.current) return;
+
+    // 用 Decorator 組裝 outbound payload
+    const payload = outboundMessageDecorator(content, "test");
+    wsServiceRef.current.send(payload);
   }
 
   // --------------------------
