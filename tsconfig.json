@@ -30,16 +30,16 @@
     "next.config.js",
     "app/service/signin/ExternalService/siginService.jsx",
     "app/(member)/signin/page.jsx",
-    "app/(coversation)/components/chat/icons.jsx",
+    "app/(conversation)/components/chat/icons.jsx",
     "components/conversation/ConversationHeader.jsx",
     "components/conversation/ConversationInput.jsx",
     "components/conversation/ConversationMessages.jsx",
     "components/conversation/MessageBubble.jsx",
     "components/conversation/RootSidebar.jsx",
     "components/conversation/ConversationClient.jsx",
-    "app/(coversation)/page.jsx",
-    "app/(coversation)/conversation/[conversation_uid]/page.jsx",
-    "app/(coversation)/layout.jsx"
+    "app/(conversation)/page.jsx",
+    "app/(conversation)/conversation/[conversation_uid]/page.jsx",
+    "app/(conversation)/layout.jsx"
   ],
   "exclude": ["node_modules"]
 }
