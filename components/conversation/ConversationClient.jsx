@@ -7,6 +7,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { ConversationHeader } from "./ConversationHeader";
 import { ConversationInput } from "./ConversationInput";
 import { ConversationMessages } from "./ConversationMessages";
+import { StatusColumn } from "@/components/conversation/StatusColumn";
 
 // 從自訂 hook 匯入
 import { useConversation } from "../../app/hooks/conversation/useConversation";
@@ -36,7 +37,8 @@ export default function ConversationClient({ conversationId }) {
         typingMessage={typingMessage}
       />
 
-      {/* 輸入區域 */}
+      <StatusColumn side="right" />
+
       <ConversationInput
         inputValue={inputValue}
         onChange={setInputValue}
