@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PlusIcon } from "@/components/icons";
@@ -29,8 +29,8 @@ import { MoreVertical, Trash2, Edit3 } from "lucide-react";
 import {
   getConversationList,
   deleteConversation,
-  renameConversation,
 } from "../../app/service/conversation/ExternalService/apiService";
+import { useRenameConversation } from "@/app/hooks/conversation/useRenameConversation";
 
 /**
  * RootSidebar:
@@ -42,6 +42,15 @@ export function RootSidebar() {
   const { setOpenMobile } = useSidebar();
   // 將 useState 直接使用陣列，不再指定型別
   const [conversationList, setConversationList] = useState([]);
+
+  const {
+    editingConversation,
+    editValue,
+    setEditValue,
+    inputRef,
+    startEditing,
+    handleRename,
+  } = useRenameConversation(conversationList, setConversationList);
 
   useEffect(() => {
     const userUid = localStorage.getItem("user_uid");
@@ -80,37 +89,6 @@ export function RootSidebar() {
       }
     } catch (error) {
       console.error("Delete conversation API Error:", error);
-    }
-  };
-
-  // 更改對話名稱
-  const handleRename = async (conversation) => {
-    // 簡單示範用 prompt 輸入新名稱，可改成 Modal
-    const newName = prompt(
-      "請輸入新的對話名稱",
-      conversation.conversation_name
-    );
-    if (!newName || !newName.trim()) return; // 使用者取消或輸入空白則不處理
-
-    try {
-      const data = await renameConversation(
-        conversation.conversation_uid,
-        newName
-      );
-      if (data?.status === true) {
-        // 在前端狀態更新名稱
-        setConversationList((prev) =>
-          prev.map((item) =>
-            item.conversation_uid === conversation.conversation_uid
-              ? { ...item, conversation_name: newName }
-              : item
-          )
-        );
-      } else {
-        console.error("Rename conversation failed:", data);
-      }
-    } catch (error) {
-      console.error("Rename conversation API Error:", error);
     }
   };
 
@@ -170,17 +148,38 @@ export function RootSidebar() {
                   key={conversation.conversation_uid}
                   className="flex flex-row items-center px-2 py-1 hover:bg-accent hover:text-accent-foreground rounded-md"
                 >
-                  {/* 名稱 (點擊可開啟此對話) */}
-                  <Link
-                    href={`/conversation/${conversation.conversation_uid}`}
-                    className="block w-full pr-1"
-                    onClick={() => setOpenMobile(false)}
-                  >
-                    {/* 用 title 屬性保留完整名稱，滑鼠 hover 可查看 */}
-                    <span title={conversation.conversation_name}>
-                      {truncatedName}
-                    </span>
-                  </Link>
+                  {editingConversation === conversation.conversation_uid ? (
+                    <input
+                      type="text"
+                      ref={inputRef}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleRename();
+                        }
+                      }}
+                      onFocus={() =>
+                        inputRef.current.setSelectionRange(
+                          0,
+                          inputRef.current.value.length
+                        )
+                      }
+                      className="border px-2 py-1 rounded-md w-full bg-background"
+                    />
+                  ) : (
+                    <Link
+                      href={`/conversation/${conversation.conversation_uid}`}
+                      className="block w-full pr-1"
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      <span title={conversation.conversation_name}>
+                        {conversation.conversation_name.length > 20
+                          ? conversation.conversation_name.slice(0, 20) + "..."
+                          : conversation.conversation_name}
+                      </span>
+                    </Link>
+                  )}
 
                   {/* 右側：三個點 (More) */}
                   <DropdownMenu>
@@ -192,7 +191,7 @@ export function RootSidebar() {
                     <DropdownMenuContent align="end">
                       {/* 更改對話名稱 */}
                       <DropdownMenuItem
-                        onClick={() => handleRename(conversation)}
+                        onClick={() => startEditing(conversation)}
                         className="cursor-pointer"
                       >
                         <Edit3 className="mr-2 h-4 w-4" />
