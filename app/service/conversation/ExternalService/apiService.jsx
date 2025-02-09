@@ -36,10 +36,10 @@ export async function renameConversation(conversationUid, newName) {
   try {
     // 假設後端的更新路由如下，請依實際為準
     const response = await postAPI(
-      "conversation_mgt/ConversationManager/update_conversation_name",
+      "metadata_mgt/ConversationManager/update_conversation_name",
       {
         conversation_uid: conversationUid,
-        new_name: newName,
+        conversation_name: newName,
       }
     );
     return response.data; // { status, message, ... }
