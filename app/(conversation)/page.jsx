@@ -35,13 +35,16 @@ export default function HomePage() {
       // 1. 呼叫後端 API 建立新的對話
       const data = await createConversation(userUid);
 
-      // 從後端回傳資料中取得 conversation_uid
+      // 2.從後端回傳資料中取得 conversation_uid
       const conversation_uid = data.data.conversation_uid;
 
-      // 2. 將使用者輸入的訊息暫存到 localStorage
+      // 3.將使用者輸入的訊息暫存到 localStorage(才有對話生成)
       localStorage.setItem(`init_msg_${conversation_uid}`, userMessage);
 
-      // 3. 導頁到 /conversation/[conversation_uid]
+      // 4.觸發updateConversationList，通知RootSidebar更新
+      window.dispatchEvent(new Event("updateConversationList"))
+
+      // 5. 導航頁面到 /conversation/[conversation_uid]
       router.push(`/conversation/${conversation_uid}`);
     } catch (error) {
       console.error("Create conversation error:", error);

@@ -52,28 +52,40 @@ export function RootSidebar() {
     handleRename,
   } = useRenameConversation(conversationList, setConversationList);
 
-  useEffect(() => {
+  const fetchConversations = async () => {
     const userUid = localStorage.getItem("user_uid");
     if (!userUid) {
       router.push("/signin");
       return;
     }
-
-    (async () => {
-      try {
-        // 呼叫 service.jsx 內的 getConversationList
-        const data = await getConversationList(userUid);
-
-        if (data?.status === true && data?.data) {
-          setConversationList(data.data);
-        } else {
-          console.error("Failed to fetch conversation list:", data);
-        }
-      } catch (error) {
-        console.error("API Error:", error);
+    try {
+      const data = await getConversationList(userUid);
+      if (data?.status === true && data?.data) {
+        setConversationList(data.data);
+      } else {
+        console.error("Failed to fetch conversation list:", data);
       }
-    })();
-  }, [router]);
+    } catch (error) {
+      console.error("API Error:", error);
+    }
+  };
+
+  // **初始載入時獲取 conversationList**
+  useEffect(() => {
+    fetchConversations();
+  }, []);
+
+  // **監聽 updateConversationList 事件**
+  useEffect(() => {
+    const handleUpdate = () => {
+      fetchConversations();
+    };
+
+    window.addEventListener("updateConversationList", handleUpdate);
+    return () => {
+      window.removeEventListener("updateConversationList", handleUpdate);
+    };
+  }, []);
 
   // 刪除對話
   const handleDelete = async (conversationUid) => {
