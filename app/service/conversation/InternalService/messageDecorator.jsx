@@ -20,14 +20,10 @@ export function inboundMessageDecorator(rawData) {
     // 1) 轉換 role
     const role = ROLE_MAPPING[event_type] || "llm";
 
-    // 2) 拼接 content
-    const content =
-      text?.text_content
-        ?.map((t) => t.content)
-        .filter(Boolean)
-        .join("\n") || "";
+    // 2) 不再拼接字串，而是保留原始的 text_content
+    const text_content = text?.text_content ?? [];
 
-    return { role, content };
+    return { role, text_content };
   } catch (err) {
     console.error("[inboundMessageDecorator] parse error:", err, rawData);
     return null;

@@ -27,12 +27,22 @@ export function useTypingEffect(initialPending = [], onComplete) {
 
     setTypingMessage({ role: "llm", content: "Thinking..." });
     await new Promise((r) => setTimeout(r, 500));
-
+    console.log(nextMsg);
     let partial = "";
-    for (let i = 0; i < nextMsg.content.length; i++) {
-      partial += nextMsg.content[i];
-      setTypingMessage({ role: nextMsg.role, content: partial });
-      await new Promise((r) => setTimeout(r, 10));
+    // 第一層：走訪 text_content 陣列
+    for (let i = 0; i < nextMsg.text_content.length; i++) {
+      const itemContent = nextMsg.text_content[i].content;
+      // 第二層：針對 itemContent 的每個字元
+      for (let c = 0; c < itemContent.length; c++) {
+        partial += itemContent[c];
+        setTypingMessage({
+          role: nextMsg.role,
+          type: nextMsg.text_content[i].type,
+          content: partial,
+        });
+        await new Promise((r) => setTimeout(r, 10));
+      }
+      // 如果想在每段之間加入換行，可自行 partial += "\n"（視需求而定）
     }
 
     // 打完 → 通知外部

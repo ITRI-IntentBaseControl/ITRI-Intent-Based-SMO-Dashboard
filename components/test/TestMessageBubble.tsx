@@ -13,7 +13,7 @@ export function TestMessageBubble({ msg, isTyping = false, onSelectOption }) {
   const { role, type, content } = msg;
   const isUser = role === "user";
   const isAssistant = role === "llm";
-
+  console.log("msg", msg);
   return (
     <div data-role={role} className="group/message w-full px-4">
       <div className={`flex gap-4 w-full ${isUser ? "justify-end" : ""}`}>
