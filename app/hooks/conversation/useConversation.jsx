@@ -84,7 +84,7 @@ export function useConversation(conversationId) {
 
   function sendMessage(content) {
     if (!wsServiceRef.current) return;
-    const payload = outboundMessageDecorator(content, "test", conversationId);
+    const payload = outboundMessageDecorator(content, "demo", conversationId);
     wsServiceRef.current.send(payload);
   }
 
