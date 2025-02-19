@@ -98,7 +98,8 @@ export default function TestClient({
   //     setIsLoading(false);
   // }
   // };
-  console.log(typingMessage);
+  console.log(chatMessages);
+
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* 頂部 Header */}

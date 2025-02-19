@@ -27,7 +27,7 @@ export function useTypingEffect(initialPending = [], onComplete) {
 
     setTypingMessage({ role: "llm", content: "Thinking..." });
     await new Promise((r) => setTimeout(r, 500));
-    console.log(nextMsg);
+
     let partial = "";
     // 第一層：走訪 text_content 陣列
     for (let i = 0; i < nextMsg.text_content.length; i++) {

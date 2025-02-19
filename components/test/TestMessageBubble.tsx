@@ -4,16 +4,16 @@ import { SparklesIcon } from "@/components/icons";
 import { ReaderDynamicContent } from "./RenderDynamicContent";
 
 /**
- * ChatMessage:
- * - role: 角色，可為 "user" 或 "assistant"
- * - type: "text" | "table" | "option"
- * - content: 依 type 不同
+ * 一條訊息的結構：
+ * - user: { role: "user", content: "..." }
+ * - llm(最終): { role: "llm", text_content: [{ type, content }, ...] }
+ * - llm(打字中): { role: "llm", content: "...(partial text)" }
  */
 export function TestMessageBubble({ msg, isTyping = false, onSelectOption }) {
-  const { role, type, content } = msg;
+  const { role, content, text_content } = msg;
   const isUser = role === "user";
   const isAssistant = role === "llm";
-  console.log("msg", msg);
+
   return (
     <div data-role={role} className="group/message w-full px-4">
       <div className={`flex gap-4 w-full ${isUser ? "justify-end" : ""}`}>
@@ -35,21 +35,27 @@ export function TestMessageBubble({ msg, isTyping = false, onSelectOption }) {
             }
           `}
         >
-          {/* 如果是助理，就使用 RenderDynamicContent 來渲染 (text/table/option) */}
-          {isAssistant ? (
+          {/* 如果是 user，就直接顯示 content */}
+          {isUser && <p>{content}</p>}
+
+          {/* 如果是 llm，可能是「打字中」或「最終」 */}
+          {isAssistant && text_content && text_content.length > 0 && (
+            // 有 text_content -> 用 ReaderDynamicContent 來顯示多段型態
             <ReaderDynamicContent
-              data={[{ type, content }]}
+              data={text_content}
               onSelectOption={onSelectOption}
             />
-          ) : (
-            // 否則視為使用者訊息 -> 顯示純文字
+          )}
+
+          {isAssistant && (!text_content || text_content.length === 0) && (
+            // 沒有 text_content -> 可能是打字中，只顯示 content
             <p>{content}</p>
           )}
 
           {/* 顯示 "正在輸入..." 之類的標記 */}
-          {isTyping && (
+          {/* {isTyping && (
             <span className="text-xs text-muted-foreground">正在輸入...</span>
-          )}
+          )} */}
         </div>
       </div>
     </div>

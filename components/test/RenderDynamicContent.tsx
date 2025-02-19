@@ -1,9 +1,8 @@
 "use client";
 import React from "react";
 
-//1.定義資料結構
-interface MessageContent {
-  type: "message";
+interface TextContent {
+  type: "text";
   content: string;
 }
 
@@ -18,18 +17,16 @@ interface TableContent {
 interface OptionContent {
   type: "option";
   content: {
-    text: string;
     choices: {
-      id: number;
+      id: string;
       label: string;
     }[];
   };
 }
 
-type DynamicContent = MessageContent | TableContent | OptionContent;
+type DynamicContent = TextContent | TableContent | OptionContent;
 
 interface ReaderDynamicContentProps {
-  //接收陣列，每個元素都可能是message、table、option
   data: DynamicContent[];
   onSelectOption?: (label: string) => void;
 }
@@ -38,19 +35,21 @@ export function ReaderDynamicContent({
   data,
   onSelectOption,
 }: ReaderDynamicContentProps) {
+  console.log("ReaderDynamicContent", data);
 
   return (
     <div className="space-y-4">
       {data.map((item, idx) => {
-        //根據不同type渲染
         switch (item.type) {
-          case "message":
+          // 文本
+          case "text":
             return (
               <div key={idx} className="p-3 border rounded">
                 <p className="text-gray-800">{item.content}</p>
               </div>
             );
 
+          // 表格
           case "table":
             return (
               <table
@@ -86,10 +85,11 @@ export function ReaderDynamicContent({
               </table>
             );
 
+          // 選項
           case "option":
             return (
               <div key={idx} className="p-3 border rounded">
-                <p className="mb-2 font-semibold"> {item.content.text}</p>
+                <p className="mb-2 font-semibold">請選擇：</p>
                 <div className="flex gap-2">
                   {item.content.choices.map((choice) => (
                     <button
@@ -109,6 +109,7 @@ export function ReaderDynamicContent({
             );
 
           default:
+            // 任何未知的型態都可以進到這個 default
             return (
               <div key={idx} className="p-3 border rounded text-red-500">
                 無法識別的類型：{(item as any).type}
