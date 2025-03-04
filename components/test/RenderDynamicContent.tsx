@@ -35,20 +35,11 @@ export function ReaderDynamicContent({
   data,
   onSelectOption,
 }: ReaderDynamicContentProps) {
-  console.log("ReaderDynamicContent", data);
 
   return (
     <div className="space-y-4">
       {data.map((item, idx) => {
         switch (item.type) {
-          // 文本
-          case "text":
-            return (
-              <div key={idx} className="p-3 border rounded">
-                <p className="text-gray-800">{item.content}</p>
-              </div>
-            );
-
           // 表格
           case "table":
             return (
@@ -109,10 +100,10 @@ export function ReaderDynamicContent({
             );
 
           default:
-            // 任何未知的型態都可以進到這個 default
+            // 任何未知的型態都可以進到這個 default (輸出文字)
             return (
-              <div key={idx} className="p-3 border rounded text-red-500">
-                無法識別的類型：{(item as any).type}
+              <div key={idx} className="p-3 border rounded">
+                <p className="text-gray-800">{item.content}</p>
               </div>
             );
         }

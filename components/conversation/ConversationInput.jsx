@@ -34,7 +34,9 @@ export function ConversationInput({ inputValue, onChange, onSend, isLoading }) {
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            onSend();
+            if (inputValue.trim() !== "") {
+              onSend();
+            }
           }
         }}
       />
@@ -42,8 +44,11 @@ export function ConversationInput({ inputValue, onChange, onSend, isLoading }) {
       {/* 下半部：右側箭頭按鈕 */}
       <div className="flex justify-end">
         <Button
-          onClick={onSend}
-          disabled={isLoading}
+          onClick={() => {
+            if (inputValue.trim() === "") return;
+            onSend();
+          }}
+          disabled={isLoading || !inputValue.trim()} // 避免空訊息送出
           className="
             rounded-xl
             px-3

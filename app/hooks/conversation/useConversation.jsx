@@ -75,7 +75,11 @@ export function useConversation(conversationId) {
   }
 
   function handleSendMessage(msg) {
-    const content = (msg ?? inputValue).trim();
+    //目前先暫訂send的全都是string，之後有圖片再改
+    if (msg && typeof msg !== "string") {
+      msg = inputValue;
+    }
+    const content = String(msg ?? "").trim();
     if (!content) return;
     setInputValue("");
     setChatMessages((prev) => [...prev, { role: "user", content }]);

@@ -26,6 +26,12 @@ export default function ConversationClient({ conversationId }) {
     handleSendMessage,
   } = useConversation(conversationId);
 
+  //按下option後讓文字進到使用者輸入框
+  function handleOptionSelect(label) {
+    //不覆蓋使用者原先輸入的資訊
+    setInputValue((prev) => (prev ? prev + " " + label : label));
+  }
+
   return (
     <div className="flex flex-col min-w-0 h-dvh bg-background">
       {/* 頂部 Header */}
@@ -35,6 +41,7 @@ export default function ConversationClient({ conversationId }) {
       <ConversationMessages
         chatMessages={chatMessages}
         typingMessage={typingMessage}
+        onSelectOption={handleOptionSelect}
       />
 
       <StatusColumn side="right" />
