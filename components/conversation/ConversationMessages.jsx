@@ -40,9 +40,9 @@ export function ConversationMessages({
     <div ref={containerRef} className="flex-1 overflow-y-auto px-2 py-4">
       <div className="mx-auto max-w-3xl flex flex-col gap-6">
         {/* 已完成顯示的訊息 */}
-        {chatMessages.map((m) => (
+        {chatMessages.map((m, index) => (
           <MessageBubble
-            key={m.id || m.timestamp}
+            key={m.id ? m.id : m.timestamp ? m.timestamp : index}
             msg={m}
             onSelectOption={onSelectOption}
           />

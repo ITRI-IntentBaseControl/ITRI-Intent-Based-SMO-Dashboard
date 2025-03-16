@@ -35,7 +35,7 @@ export function ConversationInput({ inputValue, onChange, onSend, isLoading }) {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             if (inputValue.trim() !== "") {
-              onSend();
+              onSend(inputValue);
             }
           }
         }}
@@ -46,7 +46,7 @@ export function ConversationInput({ inputValue, onChange, onSend, isLoading }) {
         <Button
           onClick={() => {
             if (inputValue.trim() === "") return;
-            onSend();
+            onSend(inputValue);
           }}
           disabled={isLoading || !inputValue.trim()} // 避免空訊息送出
           className="
