@@ -117,7 +117,7 @@ export function RootSidebar() {
               className="flex flex-row gap-3 items-center"
             >
               <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
-                ITRI Intent Base Chatbot
+                MITLAB Intent Base Chatbot
               </span>
             </Link>
 
