@@ -22,9 +22,6 @@ export function useTypingEffect(initialMessage = [], onComplete) {
     const [nextMsg, ...remain] = messageQueue;
     setMessageQueue(remain);
 
-    setTypingMessage({ role: "llm", content: "Thinking..." });
-    await delay(500);
-
     let typedText = "";
     for (let i = 0; i < nextMsg.text_content.length; i++) {
       const currentBlock = nextMsg.text_content[i];
@@ -60,9 +57,22 @@ export function useTypingEffect(initialMessage = [], onComplete) {
     setMessageQueue((prev) => [...prev, msg]);
   }
 
+  function showThinking() {
+    setTypingMessage({
+      role: "llm",
+      type: "text",
+      content: "Thinking...",
+    });
+  }
+
+  function clearTypingMessage() {
+    setTypingMessage(null);
+  }
   return {
     typingMessage,
     pushPendingMessage,
     isTyping,
+    showThinking,
+    clearTypingMessage,
   };
 }

@@ -21,7 +21,11 @@ export function inboundMessageDecorator(rawData) {
     const role = ROLE_MAPPING[event_type] || "llm";
 
     // 2) 不再拼接字串，而是保留原始的 text_content
-    const text_content = text?.text_content ?? [];
+    let text_content = text?.parsed_data ?? [];
+    if (typeof text_content === "string") {
+      text_content = [{ type: "text", content: text_content }];
+    }
+
     return { role, text_content };
   } catch (err) {
     console.error("[inboundMessageDecorator] parse error:", err, rawData);
@@ -40,7 +44,6 @@ export function outboundMessageDecorator(
   eventType = "test",
   conversation_uid
 ) {
-  console.log(eventType)
   return {
     event_type: eventType,
     conversation_uid: conversation_uid,
