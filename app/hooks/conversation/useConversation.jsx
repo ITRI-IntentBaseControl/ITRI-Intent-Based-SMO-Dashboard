@@ -12,7 +12,17 @@ export function useConversation(conversationId) {
   const [inputValue, setInputValue] = useState("");
   const [didAutoSend, setDidAutoSend] = useState(false);
 
-  // 1) 先宣告 handleOnMessage，再給 useLoadConversationAndConnect 使用
+  // 1) 先呼叫 useTypingEffect
+  const {
+    typingMessage,
+    pushPendingMessage,
+    showThinking,
+    clearTypingMessage,
+  } = useTypingEffect([], (finishedMsg) => {
+    setChatMessages((prev) => [...prev, finishedMsg]);
+  });
+
+  // 2) 再宣告 handleOnMessage，再給 useLoadConversationAndConnect 使用
   const handleOnMessage = useCallback(
     ({ type, data }) => {
       switch (type) {
@@ -32,6 +42,10 @@ export function useConversation(conversationId) {
           if (!message) return;
 
           if (message.role === "llm") {
+            //清除Thinking...
+            if (typingMessage?.content === "Thinking...") {
+              clearTypingMessage();
+            }
             pushPendingMessage(message);
           } else {
             setChatMessages((prev) => [...prev, message]);
@@ -43,17 +57,7 @@ export function useConversation(conversationId) {
       }
     },
     // 依賴這些變數時，要仔細檢查是否有可能造成無限迴圈
-    [
-      didAutoSend /* pushPendingMessage 後面才會宣告，所以要處理位置或用 useRef */,
-    ]
-  );
-
-  // 2) 再呼叫 useTypingEffect
-  const { typingMessage, pushPendingMessage } = useTypingEffect(
-    [],
-    (finishedMsg) => {
-      setChatMessages((prev) => [...prev, finishedMsg]);
-    }
+    [didAutoSend, typingMessage, clearTypingMessage, pushPendingMessage]
   );
 
   // 3) 最後呼叫 useLoadConversationAndConnect
@@ -75,7 +79,11 @@ export function useConversation(conversationId) {
   }
 
   function handleSendMessage(msg) {
-    const content = (msg ?? inputValue).trim();
+    //目前先暫訂send的全都是string，之後有圖片再改
+    if (msg && typeof msg !== "string") {
+      msg = inputValue;
+    }
+    const content = String(msg ?? "").trim();
     if (!content) return;
     setInputValue("");
     setChatMessages((prev) => [...prev, { role: "user", content }]);
@@ -84,6 +92,10 @@ export function useConversation(conversationId) {
 
   function sendMessage(content) {
     if (!wsServiceRef.current) return;
+
+    //顯示Thinking...效果，不加入訊息隊列
+    showThinking();
+
     const payload = outboundMessageDecorator(content, "demo", conversationId);
     wsServiceRef.current.send(payload);
   }

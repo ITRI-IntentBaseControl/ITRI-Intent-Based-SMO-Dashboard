@@ -49,57 +49,6 @@ export default function TestClient({
     setInputValue(label);
   }
 
-  // // 送出訊息
-  // const handleSendMessage = async () => {
-  //   if (!inputValue.trim()) return;
-  //   //未取得 userUid，無法建立對話
-  //   if (!userUid) {
-  //     alert("無法取得userUid，請確認是否已寫入localStorage");
-  //     return;
-  //   }
-
-  //   // 1) 先把使用者訊息加入 messages
-  //   const userMsg = {
-  //     id: `user-${Date.now()}`,
-  //     role: "user",
-  //     type: "text",
-  //     content: inputValue,
-  //     timestamp: new Date().toISOString(),
-  //   };
-  //   setChatMessages((prev) => [...prev, userMsg]);
-  //   setInputValue("");
-
-  //   // 2) 開始準備呼叫後端建立對話
-  //   setIsLoading(true);
-  //   setTypingMessage({
-  //     id: `typing-${Date.now()}`,
-  //     role: "llm",
-  //     type: "text",
-  //     content: conversationUid ? "傳送訊息到已存在對話..." : "建立新對話中...",
-  //     timestamp: new Date().toISOString(),
-  //   });
-
-  //   try {
-  //     //呼叫後端api，取得conversation_uid
-  //     if (!conversationUid) {
-  //       const response = await createConversation(userUid);
-  //       const conversation_uid = response?.data?.conversation_uid;
-
-  //       localStorage.setItem(`init_msg_${conversation_uid}`, userMsg.content);
-
-  //       // 跳轉到 `/test?conversation_uid=${conversation_uid}`
-  //       router.push(`/test?conversation_uid=${conversation_uid}`);
-  //     }
-  //   } catch (error) {
-  //     console.error("對話流程失敗：", error);
-  //     alert("對話流程失敗，請稍後再試。");
-  //   } finally {
-  //     setTypingMessage(null);
-  //     setIsLoading(false);
-  // }
-  // };
-  console.log(chatMessages);
-
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* 頂部 Header */}
