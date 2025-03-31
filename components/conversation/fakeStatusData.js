@@ -1,51 +1,38 @@
 //FakeStatusColumn
 export const fakeData = [
     {
-      id: 1,
-      title: "◉ 需求定義",
+      title: "◉ 文字分析",
       description: "明確的目標與範疇",
-      content:{
-        目標: "確保會議流暢並優化網速",
-        需求: "網速、頻寬、封包丟失率、QoS",
-        限制: "網路架構、現有設備支援率"
-      }
+      original_text: "我想查看 ITRI 51 館五樓所有 UE 的連線狀態",
+      preprocessed:{
+        location:"ITRI 51 館五樓",
+        subject: "UE",
+        scope: "all",
+        info_type: "connection_status"
+    }
     },
     {
-      id: 2,
-      title: "◉ 案例檢索",
-      status:"",
+      title: "◉ 意圖分類",
       description: "查找可參考或可套用之既有情境",
-      content:{
-        情境名稱: "會議模式 (語音/視訊/混合)",
-        匹配條件:"延遲、丟包率、帶寬需求",
-        案例適用性:"80%"
-      }
+      primary_intent:"request_ue_status",
+      confidence_score:0.97
     },
     {
-      id: 3,
-      title: "◉ 參數配置",
-      description: "設定並優化所需的網路參數",
-      content:{
-        基本設定: {
-            頻寬:"10000",
-            延遲:"100",
-            Qos:"1"
-        },
-        動態調整:{
-            不知道:"ttet"
-        },
-        監測重點: "語音影響因素、視訊流量"
-        
-      }
+      title: "◉ 處理流程",
+      description:"詳細意圖流程",
+      sub_actions:[
+        "查詢指定樓層資訊",
+        "整理UE狀態"
+      ]
     },
     {
-      id: 4,
-      title: "◉ 測試回饋",
-      description: "沙盒驗證並根據結果持續改進",
-      content:{
-        測試目標:"多用戶情境模擬",
-        異常檢測:"低於KPI自動回饋",
-        持續優化:"週期性調整&長期趨勢分析"
-      }
+      title: "◉ 執行結果",
+      description:"意圖執行結果",
+      type:"table",
+      data: {
+      "ue_count": 12,
+      "connected": 10,
+      "disconnected": 2
+    }
     },
-  ];
+];

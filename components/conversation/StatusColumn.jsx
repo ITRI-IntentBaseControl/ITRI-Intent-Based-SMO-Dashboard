@@ -43,16 +43,18 @@ export function StatusColumn({ side }) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {Object.entries(item.content).map(([key, value]) =>
-                      typeof value === "object" && value !== null ? (
+                    {Object.entries(item).map(([key, value]) => {
+                      if (key === "title" || key === "description") return null;
+
+                      return typeof value === "object" && value !== null ? (
                         <ExpandableSection key={key} title={key} data={value} />
                       ) : (
-                        <p key={key} className="text-gray-700">
+                        <p key={key}>
                           <span className="font-medium">{key}:</span>{" "}
                           {value.toString()}
                         </p>
-                      )
-                    )}
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
