@@ -19,5 +19,6 @@ docker build -t my-frontend:1.0 .
 docker run -d \
   --name my-frontend \
   -p ${FRONTEND_PORT}:3000 \
+  -v $(pwd):/app \
   --env-file .env \
   my-frontend:1.0
