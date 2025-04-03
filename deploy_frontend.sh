@@ -18,7 +18,7 @@ docker build -t my-frontend:1.0 .
 #   - 如果你只是單純固定內部容器跑 3000 埠，但對外要 3000，就用 -p ${FRONTEND_PORT}:3000
 docker run -d \
   --name my-frontend \
-  -p ${FRONTEND_PORT}:3000 \
+  -p ${FRONTEND_PORT}:${FRONTEND_PORT} \
   -v $(pwd):/app \
   --env-file .env \
   my-frontend:1.0

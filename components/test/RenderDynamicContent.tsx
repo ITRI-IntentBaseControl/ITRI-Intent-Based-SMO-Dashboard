@@ -9,8 +9,8 @@ interface TextContent {
 interface TableContent {
   type: "table";
   content: {
-    headers: string[];
-    rows: string[][];
+    columns: string[];
+    data: string[][];
   };
 }
 
@@ -57,7 +57,7 @@ export function ReaderDynamicContent({
                 >
                   <thead className="bg-gray-200">
                     <tr>
-                      {item.content.headers.map((header, hIdx) => (
+                      {item.content.columns.map((header, hIdx) => (
                         <th
                           key={hIdx}
                           className="border border-gray-300 px-2 py-1 text-left"
@@ -68,7 +68,7 @@ export function ReaderDynamicContent({
                     </tr>
                   </thead>
                   <tbody>
-                    {item.content.rows.map((row, rIdx) => (
+                    {item.content.data.map((row, rIdx) => (
                       <tr key={rIdx}>
                         {row.map((cell, cIdx) => (
                           <td

@@ -11,7 +11,7 @@ RUN npm install -f
 COPY . .
 
 # 暴露端口 3000
-EXPOSE 3000
+EXPOSE 30001
 
 # 啟動開發服務器
 CMD ["npm", "run", "dev"]
