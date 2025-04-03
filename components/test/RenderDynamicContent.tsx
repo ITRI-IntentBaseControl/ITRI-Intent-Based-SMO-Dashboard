@@ -102,8 +102,8 @@ export function ReaderDynamicContent({
           default:
             // 任何未知的型態都可以進到這個 default (輸出文字)
             return (
-              <div key={idx} className="p-3 border rounded">
-                <p className="text-gray-800">{item.content}</p>
+              <div key={idx} className="">
+                <p className="text-white">{item.content}</p>
               </div>
             );
         }
