@@ -1,5 +1,5 @@
 "use client";
-import { postAPI } from "@/app/api/entrypoint";
+import { postAPI } from "@/app/utils/entrypoint";
 // 若不想讓它在瀏覽器顯示 (例如要存密鑰) 則改用 server action 或 server component
 export async function register(formData) {
   try {

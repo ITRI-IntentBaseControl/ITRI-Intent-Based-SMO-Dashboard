@@ -50,6 +50,24 @@ export function ReaderDynamicContent({
           switch (item.type) {
             // 表格
             case "table":
+              // 1. 先把 item.content 從字串 -> 變成可用物件
+              let tableData;
+              try {
+                // 把所有單引號 ' 轉成 "；如果後端剛好有正常雙引號，也需要確定不會衝突
+                const validJsonString = item.content.replace(/'/g, '"');
+
+                // 2. 解析為 JS 物件 (這裡根據你的例子，可能是一個陣列)
+                const parsed = JSON.parse(validJsonString);
+
+                // 如果後端總是回傳一個陣列，那就取第 0 個
+                tableData = Array.isArray(parsed) ? parsed[0] : parsed;
+              } catch (err) {
+                console.error("Error parsing table JSON:", err);
+                // 出錯就給個 fallback，避免整個崩潰
+                tableData = { columns: [], data: [] };
+              }
+
+              // 3. 用 tableData 來渲染
               return (
                 <table
                   key={idx}
@@ -57,7 +75,7 @@ export function ReaderDynamicContent({
                 >
                   <thead className="bg-gray-200">
                     <tr>
-                      {item.content.columns.map((header, hIdx) => (
+                      {tableData.columns?.map((header, hIdx) => (
                         <th
                           key={hIdx}
                           className="border border-gray-300 px-2 py-1 text-left"
@@ -68,7 +86,7 @@ export function ReaderDynamicContent({
                     </tr>
                   </thead>
                   <tbody>
-                    {item.content.data.map((row, rIdx) => (
+                    {tableData.data?.map((row, rIdx) => (
                       <tr key={rIdx}>
                         {row.map((cell, cIdx) => (
                           <td
@@ -82,9 +100,7 @@ export function ReaderDynamicContent({
                     ))}
                   </tbody>
                 </table>
-              );
-
-            //圖片
+              ); //圖片
             case "image":
               return (
                 <div
