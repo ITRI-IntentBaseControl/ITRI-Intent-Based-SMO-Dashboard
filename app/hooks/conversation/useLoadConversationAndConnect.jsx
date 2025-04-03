@@ -34,7 +34,6 @@ export function useLoadConversationAndConnect(conversationId, onMessage) {
         if (mounted && res.status === true && Array.isArray(res.data)) {
           onMessageRef.current({ type: "history", data: res.data });
         }
-
         // 2) 建立 WebSocket 連線
         const wsUrl = `ws://${HOST}:${API_PORT}/ws/conversation/${conversationId}`;
         const service = createWebSocketService({

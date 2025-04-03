@@ -27,8 +27,11 @@ export function useConversation(conversationId) {
     ({ type, data }) => {
       switch (type) {
         case "history": {
+          // 直接把 text_content 整包塞進去，保留陣列形式
           const mapped = data.map((item) => ({
             role: item.role,
+            text_content: item.text_content,
+            // 如果想另外保留預覽用的 content，也可以再拼接
             content: item.text_content.map((t) => t.content).join("\n"),
           }));
           setChatMessages(mapped);
