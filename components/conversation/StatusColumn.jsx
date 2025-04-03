@@ -36,7 +36,7 @@ export function StatusColumn({ side }) {
           {/* 動態渲染 StautsColumn */}
           <div className="grid gap-4">
             {fakeData.map((item) => (
-              <Card key={item.id} className="w-full">
+              <Card key={item.title} className="w-full">
                 <CardHeader>
                   <CardTitle>{item.title}</CardTitle>
                   <CardDescription>{item.description}</CardDescription>

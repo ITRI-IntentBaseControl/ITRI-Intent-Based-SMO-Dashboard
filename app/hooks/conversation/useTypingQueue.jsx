@@ -27,16 +27,29 @@ export function useTypingEffect(initialMessage = [], onComplete) {
       const currentBlock = nextMsg.text_content[i];
       const blockContent = currentBlock.content;
 
+      // 如果是圖片，不做打字迴圈，直接 setTypingMessage
+      if (currentBlock.type === "image") {
+        // 直接一次把整個 blockContent (可能是 base64 或 URL) 當作 content
+        // 這裡可以依照你的需求改成對應顯示圖片的邏輯
+        setTypingMessage({
+          role: nextMsg.role,
+          type: "image",
+          content: blockContent,
+        });
+        // 可以視需求插個 delay(500) 等等，若想在圖片出現前稍微停頓
+        continue;
+      }
+
+      // 否則就是文字 → 走打字效果
       for (let c = 0; c < blockContent.length; c++) {
         typedText += blockContent[c];
         setTypingMessage({
           role: nextMsg.role,
-          type: currentBlock.type,
+          type: currentBlock.type, // 應該是 "message"
           content: typedText,
         });
-        await delay(10);
+        await delay(10); // 這裡決定打字速度
       }
-      // 視需求，可在此加入段落之間的換行或其他處理
     }
 
     // 打完 → 通知外部
