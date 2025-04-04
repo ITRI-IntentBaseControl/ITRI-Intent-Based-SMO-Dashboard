@@ -39,7 +39,18 @@ export function useTypingEffect(initialMessage = [], onComplete) {
         // 可以視需求插個 delay(500) 等等，若想在圖片出現前稍微停頓
         continue;
       }
-
+      // 如果是圖片，不做打字迴圈，直接 setTypingMessage
+      if (currentBlock.type === "table") {
+        // 直接一次把整個 blockContent (可能是 base64 或 URL) 當作 content
+        // 這裡可以依照你的需求改成對應顯示圖片的邏輯
+        setTypingMessage({
+          role: nextMsg.role,
+          type: "table",
+          content: blockContent,
+        });
+        // 可以視需求插個 delay(500) 等等，若想在圖片出現前稍微停頓
+        continue;
+      }
       // 否則就是文字 → 走打字效果
       for (let c = 0; c < blockContent.length; c++) {
         typedText += blockContent[c];
