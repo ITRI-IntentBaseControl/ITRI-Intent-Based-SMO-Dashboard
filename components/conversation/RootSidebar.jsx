@@ -231,9 +231,7 @@ export function RootSidebar() {
 
       {/* 底部 Footer (可選) */}
       <SidebarFooter>
-        <div className="px-2 py-2 text-sm text-muted-foreground">
-          可以放使用者資訊或其他功能按鈕
-        </div>
+        <div className="px-2 py-2 text-sm text-muted-foreground"></div>
       </SidebarFooter>
     </Sidebar>
   );
