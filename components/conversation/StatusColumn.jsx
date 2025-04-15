@@ -25,9 +25,9 @@ export function StatusColumn({ side }) {
     <div className="w-1/2 mx-auto flex justify-end">
       <Sheet key={side}>
         <SheetTrigger asChild>
-          <Button variant="outline" className="w-36 bg-gray-300 text-black">
+          {/* <Button variant="outline" className="w-36 bg-gray-300 text-black">
             Show Status
-          </Button>
+          </Button> */}
         </SheetTrigger>
         <SheetContent side={side} className="overflow-y-auto">
           <SheetHeader>
