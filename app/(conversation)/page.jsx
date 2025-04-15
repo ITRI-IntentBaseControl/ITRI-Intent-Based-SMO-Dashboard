@@ -63,7 +63,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-background">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold mb-2">ITRI Intent Based Chatbot</h1>
+        <h1 className="text-2xl font-bold mb-2">ITRI Intent-Based Chatbot</h1>
         <p className="text-sm text-muted-foreground">
           你可以在此輸入第一則訊息，然後系統會為你建立新的對話。
         </p>
