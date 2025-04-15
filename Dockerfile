@@ -4,11 +4,8 @@ FROM node:20.18.0
 WORKDIR /app
 
 # 複製 package.json / package-lock.json
-COPY package*.json ./
-RUN npm install -f
-
-# 複製所有源代碼
 COPY . .
+RUN npm install -f
 
 # 暴露端口 3000
 EXPOSE 30001
