@@ -7,8 +7,9 @@ WORKDIR /app
 COPY . .
 RUN npm install -f
 
-# 暴露端口 3000
-EXPOSE 30001
+# 接收建置參數
+ARG PORT=3000
+ENV PORT=$PORT
 
 # 啟動開發服務器
 CMD ["npm", "run", "dev"]
