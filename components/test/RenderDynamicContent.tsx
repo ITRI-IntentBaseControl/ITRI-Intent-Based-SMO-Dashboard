@@ -47,6 +47,10 @@ export function ReaderDynamicContent({
   onSelectOption,
 }: ReaderDynamicContentProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  // 用於記錄每個表格是否處於「展開」狀態（true=展開, false=收起）
+  const [expandedTables, setExpandedTables] = useState<boolean[]>(
+    Array(data.length).fill(false)
+  );
 
   /**
    * 將未知型別的 item.content 轉成顯示用字串
@@ -63,64 +67,75 @@ export function ReaderDynamicContent({
     }
   };
 
+  const toggleExpand = (index: number) => {
+    setExpandedTables((prev) => {
+      const updated = [...prev];
+      updated[index] = !updated[index];
+      return updated;
+    });
+  };
   return (
     <>
       {/* 主要程式碼 */}
       <div className="space-y-4">
         {data.map((item, idx) => {
           switch (item.type) {
-            /* ----------------- TABLE ----------------- */
+            // 表格
             case "table": {
-              let tableData;
-              try {
-                /**
-                 * 部分後端可能把物件序列化但使用單引號；
-                 * 先粗略 replace 為雙引號再做 JSON.parse。
-                 */
-                const jsonString = JSON.stringify(item.content).replace(/'/g, '"');
-                const parsed = JSON.parse(jsonString);
-                tableData = Array.isArray(parsed) ? parsed[0] : parsed;
-              } catch (err) {
-                console.error("Error parsing table JSON:", err);
-                tableData = { columns: [], data: [] };
-              }
+              const tableData = item.content;
+              const rowCount = tableData.data?.length || 0;
+              const isExpanded = expandedTables[idx];
+
+              // 若 rowCount > 10 且尚未展開，僅顯示前 10 筆
+              const displayedRows = isExpanded
+                ? tableData.data
+                : tableData.data.slice(0, 10);
 
               return (
-                <table
-                  key={idx}
-                  className="w-full border border-collapse border-gray-300"
-                >
-                  <thead className="bg-gray-200">
-                    <tr>
-                      {tableData.columns?.map((header: string, hIdx: number) => (
-                        <th
-                          key={hIdx}
-                          className="border border-gray-300 px-2 py-1 text-left"
-                        >
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tableData.data?.map((row: string[], rIdx: number) => (
-                      <tr key={rIdx}>
-                        {row.map((cell: string, cIdx: number) => (
-                          <td
-                            key={cIdx}
-                            className="border border-gray-300 px-2 py-1"
+                <div key={idx} className="border rounded p-2">
+                  <table className="w-full border border-collapse border-gray-300">
+                    <thead className="bg-gray-200">
+                      <tr>
+                        {tableData.columns?.map((header, hIdx) => (
+                          <th
+                            key={hIdx}
+                            className="border border-gray-300 px-2 py-1 text-left text-black"
                           >
-                            {cell}
-                          </td>
+                            {header}
+                          </th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {displayedRows.map((row, rIdx) => (
+                        <tr key={rIdx}>
+                          {row.map((cell, cIdx) => (
+                            <td
+                              key={cIdx}
+                              className="border border-gray-300 px-2 py-1"
+                            >
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {/* 若資料筆數超過 10 筆，就顯示按鈕進行展開 / 收起 */}
+                  {rowCount > 10 && (
+                    <div className="mt-2 text-right">
+                      <button
+                        onClick={() => toggleExpand(idx)}
+                        className="px-3 py-1 border rounded hover:bg-gray-100"
+                      >
+                        {isExpanded ? "收起" : "顯示全部"}
+                      </button>
+                    </div>
+                  )}
+                </div>
               );
             }
-
-            /* ----------------- IMAGE ----------------- */
+              //圖片
             case "image":
               return (
                 <div
