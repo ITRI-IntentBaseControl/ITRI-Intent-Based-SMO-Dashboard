@@ -3,60 +3,44 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 
-/**
- * Props:
- * - inputValue: 當前輸入框的值
- * - onChange: 更新父層 state
- * - onSend: 送出訊息動作
- * - isLoading: 是否正在送出中
- */
-
-export function ConversationInput({ inputValue, onChange, onSend, isLoading }) {
+export function ConversationInput({
+  inputValue,
+  onChange,
+  onSend,
+  isLoading,
+  isDisabled = false,   // true = 仍可打字，但禁止送出
+}) {
   return (
     <div className="w-1/2 mx-auto py-4 flex flex-col gap-2 rounded-2xl border border-border bg-muted">
-      {/* 上半部：多行輸入框 */}
+      {/* 多行輸入框 —— 不再 disabled */}
       <textarea
         value={inputValue}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Type message..."
+        placeholder={isDisabled ? "Assistant 正在輸出中…" : "Type message..."}
         className="
-          flex-1
-          bg-muted
-          px-3
-          py-2
-          text-sm
-          leading-6
-          resize-y
-          overflow-auto
-          focus-visible:outline-none
+          flex-1 bg-muted px-3 py-2 text-sm leading-6
+          resize-y overflow-auto focus-visible:outline-none
         "
-        // 按 Enter 送出，Shift+Enter 換行
         onKeyDown={(e) => {
+          // 只要 isDisabled，就完全禁止 Enter 送出；但可繼續打字與 Shift+Enter 換行
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            if (inputValue.trim() !== "") {
+            if (!isDisabled && inputValue.trim() !== "") {
               onSend(inputValue);
             }
           }
         }}
       />
 
-      {/* 下半部：右側箭頭按鈕 */}
+      {/* 送出按鈕 —— 仍照 isDisabled 鎖住 */}
       <div className="flex justify-end">
         <Button
           onClick={() => {
-            if (inputValue.trim() === "") return;
+            if (isDisabled || inputValue.trim() === "") return;
             onSend(inputValue);
           }}
-          disabled={isLoading || !inputValue.trim()} // 避免空訊息送出
-          className="
-            rounded-xl
-            px-3
-            py-2
-            h-fit
-            mt-2
-            mr-2
-          "
+          disabled={isLoading || !inputValue.trim() || isDisabled}
+          className="rounded-xl px-3 py-2 h-fit mt-2 mr-2"
         >
           {isLoading ? "Sending..." : "→"}
         </Button>

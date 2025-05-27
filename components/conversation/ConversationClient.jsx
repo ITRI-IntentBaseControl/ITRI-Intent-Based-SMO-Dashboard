@@ -16,7 +16,6 @@ export default function ConversationClient({ conversationId }) {
   const { width } = useWindowSize();
   const { open } = useSidebar();
 
-  // 從 hook 取得對話邏輯
   const {
     isLoading,
     inputValue,
@@ -25,19 +24,18 @@ export default function ConversationClient({ conversationId }) {
     typingMessage,
     handleSendMessage,
   } = useConversation(conversationId);
+  console.log(typingMessage)
+  // ❶ 只要 typingMessage.content 有字就鎖定輸入
+  const isInputDisabled = Boolean(typingMessage?.content?.trim());
 
-  //按下option後讓文字進到使用者輸入框
   function handleOptionSelect(label) {
-    //不覆蓋使用者原先輸入的資訊
-    setInputValue((prev) => (prev ? prev + " " + label : label));
+    setInputValue(prev => (prev ? prev + " " + label : label));
   }
 
   return (
     <div className="flex flex-col min-w-0 h-dvh bg-background">
-      {/* 頂部 Header */}
       <ConversationHeader />
 
-      {/* 訊息列表 */}
       <ConversationMessages
         chatMessages={chatMessages}
         typingMessage={typingMessage}
@@ -46,11 +44,13 @@ export default function ConversationClient({ conversationId }) {
 
       <StatusColumn side="right" />
 
+      {/* ❷ 傳入 isDisabled */}
       <ConversationInput
         inputValue={inputValue}
         onChange={setInputValue}
         onSend={handleSendMessage}
         isLoading={isLoading}
+        isDisabled={isInputDisabled}
       />
     </div>
   );
