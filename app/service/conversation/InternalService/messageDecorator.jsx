@@ -15,13 +15,8 @@ const ROLE_MAPPING = {
 export function inboundMessageDecorator(rawData) {
   try {
     const data = JSON.parse(rawData);
-    const { event_type, text } = data;
+    const { text_content, role } = data;
 
-    // 1) 轉換 role
-    const role = ROLE_MAPPING[event_type] || "llm";
-
-    // 2) 不再拼接字串，而是保留原始的 text_content
-    const text_content = text?.text_content ?? [];
     return { role, text_content };
   } catch (err) {
     console.error("[inboundMessageDecorator] parse error:", err, rawData);
@@ -32,19 +27,14 @@ export function inboundMessageDecorator(rawData) {
 /**
  * 組裝要送出的 WebSocket payload
  * @param {string} content - 使用者輸入的文字
- * @param {string} eventType - 與後端協定，如 "test" 或 "message"
  * @returns {object}
  */
 export function outboundMessageDecorator(
   content,
-  eventType = "test",
   conversation_uid
 ) {
   return {
-    event_type: eventType,
     conversation_uid: conversation_uid,
-    text: {
-      text_content: [{ type: "message", content }],
-    },
+    text_content: [{ type: "message", content }],
   };
 }
