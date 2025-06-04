@@ -28,7 +28,7 @@ const THEME_COLOR_SCRIPT = `\
   }
   function updateThemeColor() {
     var isDark = html.classList.contains('dark');
-    meta.setAttribute('content', isDark ? '${LIGHT_THEME_COLOR}' : '${LIGHT_THEME_COLOR}');
+    meta.setAttribute('content', isDark ? '${DARK_THEME_COLOR}' : '${DARK_THEME_COLOR}');
   }
   var observer = new MutationObserver(updateThemeColor);
   observer.observe(html, { attributes: true, attributeFilter: ['class'] });
