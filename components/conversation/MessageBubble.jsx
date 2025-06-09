@@ -2,7 +2,7 @@
 
 import React from "react";
 import { SparklesIcon } from "@/components/icons";
-import { ReaderDynamicContent } from "../test/RenderDynamicContent";
+import { RenderDynamicContent } from "../test/RenderDynamicContent";
 
 /**
  * ChatMessage:
@@ -49,8 +49,8 @@ export function MessageBubble({ msg, isTyping = false, onSelectOption }) {
 
           {/* 如果是 llm，可能是「打字中」或「最終」 */}
           {isAssistant && text_content && text_content.length > 0 && (
-            // 有 text_content -> 用 ReaderDynamicContent 來顯示多段型態
-            <ReaderDynamicContent
+            // 有 text_content -> 用 RenderDynamicContent 來顯示多段型態
+            <RenderDynamicContent
               data={text_content}
               onSelectOption={onSelectOption}
             />
