@@ -13,8 +13,8 @@ interface Props {
   data: RawItem[];
 }
 
-export function ReaderDynamicContent({ data }: Props) {
-  console.log("input data:", data);
+export function RenderDynamicContent({ data }: Props) {
+
   /* ---------- 1. 把每段 Markdown 字串拆塊並攤平成一維陣列 ---------- */
   const normalize = (input: unknown): string =>
     typeof input === "string"
@@ -45,7 +45,7 @@ export function ReaderDynamicContent({ data }: Props) {
   const safeBlocks = blocks.filter(
     (b) => !(b.type === "markdown" && !b.content.trim())
   );
-  console.log("safeBlocks:", safeBlocks);
+
   /* ---------- 2. 圖片 Modal ---------- */
   const [img, setImg] = useState<string | null>(null);
 
@@ -141,20 +141,22 @@ export function ReaderDynamicContent({ data }: Props) {
   };
 
   return (
-    <>
-      <div className="">{safeBlocks.map(render)}</div>
+    <div className="bg-zinc-900 rounded-lg border">
+      <div className="p-4">
+        <div className="">{safeBlocks.map(render)}</div>
 
-      {img && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
-          onClick={() => setImg(null)}
-        >
-          <img
-            src={img}
-            className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-lg"
-          />
-        </div>
-      )}
-    </>
+        {img && (
+          <div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+            onClick={() => setImg(null)}
+          >
+            <img
+              src={img}
+              className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-lg"
+            />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

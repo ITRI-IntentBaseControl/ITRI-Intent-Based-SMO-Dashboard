@@ -77,7 +77,11 @@ export function splitMarkdownBlocks(input: unknown): Detected[] {
     cleaned = cleaned.replace(/(\r?\n){2,}/g, "\n");
 
     // 4) 折疊「列表符號前」的空白行（解決 bullet 之間多空行）
-    cleaned = cleaned.replace(/(\r?\n){2}(?=\s*[-*+]\s)/g, "\n");
+    cleaned = cleaned
+      // 標題行後面 >=2 空行 → 1
+      .replace(/(\\*\\*.*?\\*\\*:)(\\r?\\n){2,}(?=\\s*\\|)/g, "$1\\n")
+      // 表格前連續空行 → 1
+      .replace(/(\\r?\\n){2,}(?=\\s*\\|)/g, "\\n");
 
     /* 5) 若內容為純空白／換行，不要渲染 -------------------- */
     if (!cleaned.trim()) return; // 🚫 內容只有空白或換行
