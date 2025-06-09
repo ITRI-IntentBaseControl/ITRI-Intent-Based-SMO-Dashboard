@@ -1,13 +1,14 @@
+"use client";
 /* =========================================================
  * utils/markdownParser.ts
  * ---------------------------------------------------------
  *  將「一大段 Markdown 字串」切成可渲染的區塊：
  *    markdown / table / image / code
  *
- *  ⚙️  2025‑06‑04 更新內容
- *  1. tableRE 改成容忍 \r\n 與行首縮排，並放寬對齊線判斷邏輯
- *  2. parseTable 會先統一換行符、移除行首空白，再處理資料
- *  3. 提供 splitMarkdownBlocks 的完整參考實作，方便直接匯入
+ *  ⚙️  2025‑06‑05 更新內容
+ *  1. pushMarkdown   ‑ 減少多餘空行、智能合併被硬斷的段落行
+ *  2. parseTable     ‑ 保留 **bold** 標記以便表格內可渲染粗體
+ *  3. ✨ 空白 / 換行字串不再渲染（cleaned.trim() 檢查）
  * =======================================================*/
 
 /* ---------- Regular Expressions ------------------------ */
@@ -41,7 +42,7 @@ function parseTable(md: string) {
     row
       .slice(1, -1) // 把首尾 `|`
       .split("|")
-      .map((s) => s.trim());
+      .map((s) => s.trim()); // 保留 **bold** 等行內標記
 
   const columns = toCells(header);
   const data = body.map(toCells);
@@ -56,13 +57,15 @@ export function splitMarkdownBlocks(input: unknown): Detected[] {
     typeof input === "string" ? input : JSON.stringify(input, null, 2);
   let rest = raw;
 
+  // 將處理後的文字推入 blocks 陣列
   const pushMarkdown = (txt: string) => {
-    /* -1) 只拿掉字面上的 \\n，保留真正 \n ---------------- */
-    txt = txt.replace(/\\n/g, ""); // ⚠️ 不再刪 /\r?\n/
+    /* -1) 移除字面上的 \n，保留真正換行 -------------------- */
+    txt = txt.replace(/\\n/g, "");
 
-    /* 0) 前置修補：黏回被斷行的 list，刪空 li -------------- */
-    txt = txt.replace(/-\s*(\r?\n)+\s+/g, "- ");
-    txt = txt.replace(/^\s*[-*+]\s*(?=\r?\n)/gm, "");
+    /* 0) 將被硬切換行的段落合併：
+     *    把「上一行結尾非 markdown 控制符，而下一行行首也非控制符」的單一換行改為空格
+     */
+    txt = txt.replace(/([^\n])\n(?!\n)(?!\s*[#>\-|*+]|\s*\d+\.)/g, "$1 ");
 
     /* 1) 去掉首尾純空白行 ---------------------------------- */
     let cleaned = txt.replace(/^\s*(\r?\n)+/, "").replace(/(\r?\n)+\s*$/, "");
@@ -70,13 +73,16 @@ export function splitMarkdownBlocks(input: unknown): Detected[] {
     /* 2) 刪掉只有空白的行 ---------------------------------- */
     cleaned = cleaned.replace(/^[ \t]+\r?\n/gm, "");
 
-    /* 3) 折疊過多空行（>=3 → 2）--------------------------- */
-    cleaned = cleaned.replace(/(\r?\n){3,}/g, "");
+    /* 3) 折疊連續空行（>=2 → 1）--------------------------- */
+    cleaned = cleaned.replace(/(\r?\n){2,}/g, "\n");
 
-    // 4) 折疊「列表符號前」的空白行（剛好解決 bullet 之間的空行）
-    cleaned = cleaned.replace(/(\r?\n){2}(?=\s*[-*+]\s)/g, "\n"); // ★新增這行
+    // 4) 折疊「列表符號前」的空白行（解決 bullet 之間多空行）
+    cleaned = cleaned.replace(/(\r?\n){2}(?=\s*[-*+]\s)/g, "\n");
 
-    if (cleaned) blocks.push({ type: "markdown", content: cleaned });
+    /* 5) 若內容為純空白／換行，不要渲染 -------------------- */
+    if (!cleaned.trim()) return; // 🚫 內容只有空白或換行
+
+    blocks.push({ type: "markdown", content: cleaned });
   };
 
   while (rest) {
@@ -118,7 +124,7 @@ export function splitMarkdownBlocks(input: unknown): Detected[] {
       blocks.push({ type: "code", content: match.trim() });
     }
 
-    // rest = rest.slice(index + match.length);
+    // 繼續處理後續字串，並清掉最前面的空白行
     rest = rest.slice(index + match.length).replace(/^\s*(\r?\n)+/, "");
   }
   return blocks;

@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function ReaderDynamicContent({ data }: Props) {
-  // console.log(data);
+  console.log("input data:", data);
   /* ---------- 1. 把每段 Markdown 字串拆塊並攤平成一維陣列 ---------- */
   const normalize = (input: unknown): string =>
     typeof input === "string"
@@ -42,7 +42,10 @@ export function ReaderDynamicContent({ data }: Props) {
     /* 文字／Markdown 走舊邏輯 */
     return splitMarkdownBlocks(normalize(String(raw)));
   });
-
+  const safeBlocks = blocks.filter(
+    (b) => !(b.type === "markdown" && !b.content.trim())
+  );
+  console.log("safeBlocks:", safeBlocks);
   /* ---------- 2. 圖片 Modal ---------- */
   const [img, setImg] = useState<string | null>(null);
 
@@ -58,11 +61,7 @@ export function ReaderDynamicContent({ data }: Props) {
     switch (blk.type) {
       case "markdown":
         return (
-          <ReactMarkdown
-            key={i}
-            remarkPlugins={[remarkGfm]}
-            className="prose prose-invert"
-          >
+          <ReactMarkdown key={i} remarkPlugins={[remarkGfm]} className="">
             {blk.content}
           </ReactMarkdown>
         );
@@ -125,7 +124,6 @@ export function ReaderDynamicContent({ data }: Props) {
           </div>
         );
       }
-        
 
       case "code":
         return (
@@ -144,7 +142,7 @@ export function ReaderDynamicContent({ data }: Props) {
 
   return (
     <>
-      <div className="space-y-4">{blocks.map(render)}</div>
+      <div className="">{safeBlocks.map(render)}</div>
 
       {img && (
         <div
