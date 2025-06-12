@@ -15,9 +15,14 @@ const ROLE_MAPPING = {
 export function inboundMessageDecorator(rawData) {
   try {
     const data = JSON.parse(rawData);
-    const { text_content, role } = data;
-
-    return { role, text_content };
+    const role ="llm";
+    
+    // ❷ 取出文字區塊，確保一定是陣列
+    const textBlocks =
+      data?.text?.text_content && Array.isArray(data.text.text_content)
+        ? data.text.text_content
+        : [{ type: "message", content: String(data.text ?? "") }];
+    return { role, text_content: textBlocks };
   } catch (err) {
     console.error("[inboundMessageDecorator] parse error:", err, rawData);
     return null;
@@ -31,10 +36,15 @@ export function inboundMessageDecorator(rawData) {
  */
 export function outboundMessageDecorator(
   content,
+  eventType = "test",
   conversation_uid
 ) {
   return {
+    event_type: eventType,
     conversation_uid: conversation_uid,
-    text_content: [{ type: "message", content }],
+    text: {
+      text_content: [{ type: "message", content }],
+    },
   };
 }
+

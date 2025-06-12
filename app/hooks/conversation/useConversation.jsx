@@ -43,12 +43,13 @@ export function useConversation(conversationId) {
         case "ws-message": {
           const message = inboundMessageDecorator(data);
           if (!message) return;
-
+          
           if (message.role === "llm") {
             //清除Thinking...
             if (typingMessage?.content === "Thinking...") {
               clearTypingMessage();
             }
+            
             pushPendingMessage(message);
           } else {
             setChatMessages((prev) => [...prev, message]);
@@ -99,7 +100,7 @@ export function useConversation(conversationId) {
     //顯示Thinking...效果，不加入訊息隊列
     showThinking();
 
-    const payload = outboundMessageDecorator(content, conversationId);
+    const payload = outboundMessageDecorator(content, "demo", conversationId);
     wsServiceRef.current.send(payload);
   }
 

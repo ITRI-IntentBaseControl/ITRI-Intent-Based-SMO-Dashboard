@@ -24,7 +24,6 @@ export default function ConversationClient({ conversationId }) {
     typingMessage,
     handleSendMessage,
   } = useConversation(conversationId);
-  console.log(typingMessage)
   // ❶ 只要 typingMessage.content 有字就鎖定輸入
   const isInputDisabled = Boolean(typingMessage?.content?.trim());
 
