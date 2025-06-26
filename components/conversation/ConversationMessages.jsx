@@ -1,61 +1,48 @@
+// ConversationMessages.tsx
 "use client";
 
 import React, { useEffect, useRef } from "react";
 import { MessageBubble } from "./MessageBubble";
 
-/**
- * Props:
- * - chatMessages: 已完成顯示的訊息 (陣列)
- * - typingMessage: 正在打字中的訊息，可為 null
- *
- * 此元件只負責渲染:
- * - chatMessages: 完整訊息列表
- * - typingMessage: 正在打字的訊息（若有）
- */
 export function ConversationMessages({
   chatMessages,
   typingMessage,
   onSelectOption,
 }) {
-  // 1. 建立 ref，指向可滾動的容器
   const containerRef = useRef(null);
+  const bottomRef = useRef(null);
 
-  // 2. 監聽 chatMessages 與 typingMessage，每次更新就捲動到底部
+  // 當有新訊息或 typingMessage 變化時，滾動到 bottomRef
   useEffect(() => {
-    setTimeout(scrollToBottom, 50);
-  }, [chatMessages, typingMessage]);
-
-  // 3. 自動捲動到底部的函式
-  function scrollToBottom() {
-    if (containerRef.current) {
-      containerRef.current.scrollTo({
-        top: containerRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages.length, typingMessage?.content]);
 
   return (
-    // 4. 讓 ref 指向可滾動的容器
-    <div ref={containerRef} className="flex-1 overflow-y-auto px-2 py-4">
+    <div
+      ref={containerRef}
+      // **重點：加上 min-h-0，才能正確讓 overflow-y-auto 生效**
+      className="min-h-0 flex-1 overflow-y-auto px-2 py-4"
+    >
       <div className="mx-auto max-w-3xl flex flex-col gap-6">
-        {/* 已完成顯示的訊息 */}
         {chatMessages.map((m, index) => (
           <MessageBubble
-            key={m.id ? m.id : m.timestamp ? m.timestamp : index}
+            key={m.id ?? m.timestamp ?? index}
             msg={m}
             onSelectOption={onSelectOption}
           />
         ))}
 
-        {/* 正在打字中的訊息 (typingMessage) */}
         {typingMessage && (
           <MessageBubble
+            key="typing"
             msg={typingMessage}
             isTyping
             onSelectOption={onSelectOption}
           />
         )}
+
+        {/* 空的 div 作為滾動目標 */}
+        <div ref={bottomRef} />
       </div>
     </div>
   );
