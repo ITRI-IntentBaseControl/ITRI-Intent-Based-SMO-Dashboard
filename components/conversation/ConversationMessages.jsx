@@ -4,44 +4,45 @@
 import React, { useEffect, useRef } from "react";
 import { MessageBubble } from "./MessageBubble";
 
-export function ConversationMessages({
-  chatMessages,
-  typingMessage,
-  onSelectOption,
-}) {
+export function ConversationMessages({ chatMessages, onSelectOption }) {
   const containerRef = useRef(null);
   const bottomRef = useRef(null);
 
-  // 當有新訊息或 typingMessage 變化時，滾動到 bottomRef
+  // 只要 chatMessages 陣列長度改變，就滾到底
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages.length, typingMessage?.content]);
+  }, [chatMessages.length]);
+
+  // 判斷最後一筆是否為 user
+  const lastMsg = chatMessages[chatMessages.length - 1];
+  const shouldShowThinking = lastMsg?.role === "user";
 
   return (
     <div
       ref={containerRef}
-      // **重點：加上 min-h-0，才能正確讓 overflow-y-auto 生效**
       className="min-h-0 flex-1 overflow-y-auto px-2 py-4"
     >
       <div className="mx-auto max-w-3xl flex flex-col gap-6">
-        {chatMessages.map((m, index) => (
+        {/* 先渲染所有聊天訊息，皆以已完成顯示 */}
+        {chatMessages.map((m, idx) => (
           <MessageBubble
-            key={m.id ?? m.timestamp ?? index}
+            key={m.id ?? m.timestamp ?? idx}
             msg={m}
             onSelectOption={onSelectOption}
           />
         ))}
 
-        {typingMessage && (
+        {/* 如果最後一筆是 user，就顯示一個助理打字中的提示 */}
+        {shouldShowThinking && (
           <MessageBubble
-            key="typing"
-            msg={typingMessage}
+            key="thinking"
+            msg={{ role: "llm", content: "Thinking…", text_content: [] }}
             isTyping
             onSelectOption={onSelectOption}
           />
         )}
 
-        {/* 空的 div 作為滾動目標 */}
+        {/* 滾動目標節點 */}
         <div ref={bottomRef} />
       </div>
     </div>

@@ -8,7 +8,7 @@ export function MessageBubble({ msg, isTyping = false, onSelectOption }) {
   const { role, text_content } = msg;
   const isUser = role === "user";
   const isAssistant = role === "llm";
-
+  // console.log(text_content);
   return (
     <div data-role={role} className="group/message w-full px-4">
       <div className={`flex gap-4 w-full ${isUser ? "justify-end" : ""}`}>
@@ -40,7 +40,6 @@ export function MessageBubble({ msg, isTyping = false, onSelectOption }) {
               >
                 <RenderDynamicContent
                   data={text_content}
-                  isTyping={isTyping}
                   onSelectOption={onSelectOption}
                 />
               </motion.div>
@@ -48,7 +47,11 @@ export function MessageBubble({ msg, isTyping = false, onSelectOption }) {
               <p className="bg-zinc-900 rounded-lg border p-4 italic text-center">
                 Thinking…
               </p>
-            ) : null)}
+            ) : (
+              <p className="bg-zinc-900 rounded-lg border p-4 italic text-center">
+                Thinking…
+              </p>
+            ))}
         </div>
       </div>
     </div>
