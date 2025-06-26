@@ -16,7 +16,7 @@ interface Props {
   onSelectOption?: (...args: any[]) => void;
 }
 
-export function RenderDynamicContent({ data, isTyping }: Props) {
+export function RenderDynamicContent({ data }: Props) {
   // 1. 拆塊
   const normalize = (input: unknown) =>
     typeof input === "string"
@@ -137,7 +137,7 @@ export function RenderDynamicContent({ data, isTyping }: Props) {
         // markdown 文字塊
         if (blk.type === "markdown") {
           const text = blk.content;
-          const toShow = isTyping ? typedBlocks[i] : text;
+          const toShow = text;
           return (
             <ReactMarkdown key={i} remarkPlugins={[remarkGfm]} className="">
               {toShow}
