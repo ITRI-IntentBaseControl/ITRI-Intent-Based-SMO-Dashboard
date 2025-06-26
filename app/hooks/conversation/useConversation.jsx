@@ -100,7 +100,7 @@ export function useConversation(conversationId) {
     //顯示Thinking...效果，不加入訊息隊列
     showThinking();
 
-    const payload = outboundMessageDecorator(content, "demo", conversationId);
+    const payload = outboundMessageDecorator(content, conversationId);
     wsServiceRef.current.send(payload);
   }
 

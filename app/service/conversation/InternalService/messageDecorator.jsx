@@ -15,14 +15,8 @@ const ROLE_MAPPING = {
 export function inboundMessageDecorator(rawData) {
   try {
     const data = JSON.parse(rawData);
-    const role ="llm";
-    
-    // ❷ 取出文字區塊，確保一定是陣列
-    const textBlocks =
-      data?.text?.text_content && Array.isArray(data.text.text_content)
-        ? data.text.text_content
-        : [{ type: "message", content: String(data.text ?? "") }];
-    return { role, text_content: textBlocks };
+    const { text_content, role } = data;
+    return { role, text_content: text_content };
   } catch (err) {
     console.error("[inboundMessageDecorator] parse error:", err, rawData);
     return null;
@@ -34,17 +28,9 @@ export function inboundMessageDecorator(rawData) {
  * @param {string} content - 使用者輸入的文字
  * @returns {object}
  */
-export function outboundMessageDecorator(
-  content,
-  eventType = "test",
-  conversation_uid
-) {
+export function outboundMessageDecorator(content, conversation_uid) {
   return {
-    event_type: eventType,
     conversation_uid: conversation_uid,
-    text: {
-      text_content: [{ type: "message", content }],
-    },
+    text_content: [{ type: "message", content }],
   };
 }
-
