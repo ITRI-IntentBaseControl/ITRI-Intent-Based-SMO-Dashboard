@@ -1,3 +1,4 @@
+// ConversationClient.tsx
 "use client";
 
 import React from "react";
@@ -24,33 +25,47 @@ export default function ConversationClient({ conversationId }) {
     typingMessage,
     handleSendMessage,
   } = useConversation(conversationId);
-  // ❶ 只要 typingMessage.content 有字就鎖定輸入
+
+  // 只要 typingMessage.content 有字就鎖定輸入
   const isInputDisabled = Boolean(typingMessage?.content?.trim());
 
   function handleOptionSelect(label) {
-    setInputValue(prev => (prev ? prev + " " + label : label));
+    setInputValue((prev) => (prev ? prev + " " + label : label));
   }
 
   return (
-    <div className="flex flex-col min-w-0 h-dvh bg-background">
+    <div className="flex flex-col min-w-0 h-screen bg-background">
       <ConversationHeader />
 
-      <ConversationMessages
-        chatMessages={chatMessages}
-        typingMessage={typingMessage}
-        onSelectOption={handleOptionSelect}
-      />
+      {/* 訊息 + 狀態欄 同一列 */}
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        {/* 訊息區 */}
+        <div className="flex-1 md:flex-row  overflow-y-auto px-2 py-4">
+          <div className="mx-auto max-w-3xl flex fle x-col gap-6">
+            <ConversationMessages
+              chatMessages={chatMessages}
+              typingMessage={typingMessage}
+              onSelectOption={handleOptionSelect}
+            />
+          </div>
+        </div>
 
-      <StatusColumn side="right" />
+        {/* 右側狀態欄 */}
+        {open && <StatusColumn side="right" />}
+      </div>
 
-      {/* ❷ 傳入 isDisabled */}
-      <ConversationInput
-        inputValue={inputValue}
-        onChange={setInputValue}
-        onSend={handleSendMessage}
-        isLoading={isLoading}
-        isDisabled={isInputDisabled}
-      />
+      {/* 輸入框 區塊 (置中對齊同 mx-auto max-w-3xl) */}
+      <div className="px-2 pb-4">
+        <div className="mx-auto max-w-3xl">
+          <ConversationInput
+            inputValue={inputValue}
+            onChange={setInputValue}
+            onSend={handleSendMessage}
+            isLoading={isLoading}
+            isDisabled={isInputDisabled}
+          />
+        </div>
+      </div>
     </div>
   );
 }

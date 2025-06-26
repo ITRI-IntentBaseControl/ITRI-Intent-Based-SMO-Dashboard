@@ -1,42 +1,26 @@
 "use client";
-
 import React from "react";
 import { SparklesIcon } from "@/components/icons";
+import { motion } from "framer-motion";
 import { RenderDynamicContent } from "../test/RenderDynamicContent";
 
-/**
- * ChatMessage:
- * - role: 角色，可為 "user" 或 "assistant"
- * - content: 文字內容
- *
- * MessageBubbleProps:
- * - msg: ChatMessage 物件
- * - isTyping: 是否正在打字中 (可選)
- */
 export function MessageBubble({ msg, isTyping = false, onSelectOption }) {
-  const { role, content, text_content } = msg;
+  const { role, text_content } = msg;
   const isUser = role === "user";
-  const isAssistant = role === "llm"; // 若與後端實際傳回的角色不符，可自行調整
+  const isAssistant = role === "llm";
 
   return (
     <div data-role={role} className="group/message w-full px-4">
       <div className={`flex gap-4 w-full ${isUser ? "justify-end" : ""}`}>
-        {/* 助理的頭像 */}
         {isAssistant && (
           <div className="size-8 flex items-center justify-center rounded-full ring-1 ring-border bg-background shrink-0">
             <SparklesIcon size={14} />
           </div>
         )}
 
-        {/*
-          1) `whitespace-pre-wrap break-words`：確保長字串會換行
-          2) User：max-w-[50%]
-          3) Assistant：max-w-[80%]
-        */}
         <div
           className={`
-            flex flex-col gap-2 
-            whitespace-pre-wrap break-words
+            flex flex-col gap-2 whitespace-pre-wrap break-words
             ${
               isUser
                 ? "max-w-[50%] bg-primary text-primary-foreground px-3 py-2 rounded-xl"
@@ -44,22 +28,27 @@ export function MessageBubble({ msg, isTyping = false, onSelectOption }) {
             }
           `}
         >
-          {/* 如果是 user，就直接顯示 content */}
-          {isUser && <p>{content}</p>}
+          {isUser && <p>{msg.content}</p>}
 
-          {/* 如果是 llm，可能是「打字中」或「最終」 */}
-          {isAssistant && text_content && text_content.length > 0 && (
-            // 有 text_content -> 用 RenderDynamicContent 來顯示多段型態
-            <RenderDynamicContent
-              data={text_content}
-              onSelectOption={onSelectOption}
-            />
-          )}
-
-          {isAssistant && (!text_content || text_content.length === 0) && (
-            // 沒有 text_content -> 可能是打字中，只顯示 content
-            <p>{content}</p>
-          )}
+          {isAssistant &&
+            (text_content && text_content.length > 0 ? (
+              // ——— 這邊把 RenderDynamicContent 包進 motion.div ———
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <RenderDynamicContent
+                  data={text_content}
+                  isTyping={isTyping}
+                  onSelectOption={onSelectOption}
+                />
+              </motion.div>
+            ) : isTyping ? (
+              <p className="bg-zinc-900 rounded-lg border p-4 italic text-center">
+                Thinking…
+              </p>
+            ) : null)}
         </div>
       </div>
     </div>
