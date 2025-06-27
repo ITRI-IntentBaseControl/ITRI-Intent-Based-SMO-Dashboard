@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PlusIcon } from "@/components/icons";
@@ -14,7 +14,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-// 下拉選單 (DropdownMenu) 相關組件 (shadcn/ui)
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -22,25 +21,17 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
-// 圖示: 使用 lucide-react 提供的鉛筆圖示 Edit3
 import { MoreVertical, Trash2, Edit3 } from "lucide-react";
 
-// 從 service.jsx 匯入 API
 import {
   getConversationList,
   deleteConversation,
 } from "../../app/service/conversation/ExternalService/apiService";
 import { useRenameConversation } from "@/app/hooks/conversation/useRenameConversation";
 
-/**
- * RootSidebar:
- * - 讀取使用者 conversationList 並顯示於側邊欄
- * - 提供新增、重新命名、刪除對話的功能
- */
 export function RootSidebar() {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
-  // 將 useState 直接使用陣列，不再指定型別
   const [conversationList, setConversationList] = useState([]);
 
   const {
@@ -70,31 +61,23 @@ export function RootSidebar() {
     }
   };
 
-  // **初始載入時獲取 conversationList**
   useEffect(() => {
     fetchConversations();
   }, []);
 
-  // **監聽 updateConversationList 事件**
   useEffect(() => {
-    const handleUpdate = () => {
-      fetchConversations();
-    };
-
+    const handleUpdate = () => fetchConversations();
     window.addEventListener("updateConversationList", handleUpdate);
-    return () => {
+    return () =>
       window.removeEventListener("updateConversationList", handleUpdate);
-    };
   }, []);
 
-  // 刪除對話
   const handleDelete = async (conversationUid) => {
     try {
       const data = await deleteConversation(conversationUid);
       if (data?.status === true) {
-        // 從前端狀態移除
         setConversationList((prev) =>
-          prev.filter((item) => item.conversation_uid !== conversationUid)
+          prev.filter((c) => c.conversation_uid !== conversationUid)
         );
       } else {
         console.error("Delete conversation failed:", data);
@@ -106,22 +89,18 @@ export function RootSidebar() {
 
   return (
     <Sidebar className="group-data-[side=left]:border-r-0">
-      {/* 頂部 Header */}
       <SidebarHeader>
         <SidebarMenu>
-          <div className="flex flex-row justify-between items-center">
-            {/* 左側標題: 點擊回到 / */}
+          <div className="flex justify-between items-center px-2 py-1">
             <Link
               href="/"
               onClick={() => setOpenMobile(false)}
-              className="flex flex-row gap-3 items-center"
+              className="flex items-center gap-2"
             >
-              <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
+              <span className="text-lg font-semibold hover:bg-muted rounded-md px-2">
                 ITRI Intent-Based Chatbot
               </span>
             </Link>
-
-            {/* 右側：New chat 按鈕 */}
             <Button
               variant="ghost"
               type="button"
@@ -129,8 +108,6 @@ export function RootSidebar() {
               onClick={() => {
                 setOpenMobile(false);
                 router.push("/");
-                // 注意: 部分版本的 Next 可能不支援 refresh()，
-                // 若出現錯誤可移除或改用其他刷新方式
                 router.refresh();
               }}
             >
@@ -140,7 +117,6 @@ export function RootSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
-      {/* 中間 Content */}
       <SidebarContent>
         <SidebarMenu>
           {conversationList.length === 0 ? (
@@ -149,16 +125,12 @@ export function RootSidebar() {
             </div>
           ) : (
             conversationList.map((conversation) => {
-              // 對話名稱過長，做截斷
-              const truncatedName =
-                conversation.conversation_name.length > 20
-                  ? conversation.conversation_name.slice(0, 20) + "..."
-                  : conversation.conversation_name;
-
+              const name =
+                conversation.conversation_name?.trim() || "未命名對話";
               return (
                 <div
                   key={conversation.conversation_uid}
-                  className="flex flex-row items-center px-2 py-1 hover:bg-accent hover:text-accent-foreground rounded-md"
+                  className="flex items-center px-2 py-1 hover:bg-accent hover:text-accent-foreground rounded-md"
                 >
                   {editingConversation === conversation.conversation_uid ? (
                     <input
@@ -167,9 +139,7 @@ export function RootSidebar() {
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleRename();
-                        }
+                        if (e.key === "Enter") handleRename();
                       }}
                       onFocus={() =>
                         inputRef.current.setSelectionRange(
@@ -177,23 +147,20 @@ export function RootSidebar() {
                           inputRef.current.value.length
                         )
                       }
-                      className="border px-2 py-1 rounded-md w-full bg-background"
+                      className="flex-1 border bg-background px-2 py-1 rounded-md"
                     />
                   ) : (
                     <Link
                       href={`/conversation/${conversation.conversation_uid}`}
-                      className="block w-full pr-1"
                       onClick={() => setOpenMobile(false)}
+                      className="flex-1 pr-1"
                     >
-                      <span title={conversation.conversation_name}>
-                        {conversation.conversation_name.length > 20
-                          ? conversation.conversation_name.slice(0, 20) + "..."
-                          : conversation.conversation_name}
+                      <span title={conversation.conversation_name || name}>
+                        {name.length > 20 ? name.slice(0, 20) + "..." : name}
                       </span>
                     </Link>
                   )}
 
-                  {/* 右側：三個點 (More) */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
@@ -201,7 +168,6 @@ export function RootSidebar() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {/* 更改對話名稱 */}
                       <DropdownMenuItem
                         onClick={() => startEditing(conversation)}
                         className="cursor-pointer"
@@ -209,8 +175,6 @@ export function RootSidebar() {
                         <Edit3 className="mr-2 h-4 w-4" />
                         重新命名
                       </DropdownMenuItem>
-
-                      {/* 刪除對話 */}
                       <DropdownMenuItem
                         className="text-destructive cursor-pointer"
                         onClick={() =>
@@ -229,9 +193,8 @@ export function RootSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      {/* 底部 Footer (可選) */}
       <SidebarFooter>
-        <div className="px-2 py-2 text-sm text-muted-foreground"></div>
+        <div className="px-2 py-2 text-sm text-muted-foreground" />
       </SidebarFooter>
     </Sidebar>
   );
