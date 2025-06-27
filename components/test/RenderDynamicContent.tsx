@@ -58,29 +58,53 @@ export function RenderDynamicContent({ data }: Props) {
   function MarkdownBlock({ content }: { content: string }) {
     const lines = content.split("\n");
     const elems: React.ReactNode[] = [];
-    let listItems: React.ReactNode[] = [];
-    let listType: "ul" | "ol" | null = null;
 
-    const flushList = () => {
-      if (!listItems.length) return;
-      const Tag = listType === "ol" ? "ol" : "ul";
-      elems.push(
-        <Tag key={elems.length} className="list-inside mb-4">
-          {listItems}
-        </Tag>
-      );
-      listItems = [];
-      listType = null;
+    // 巢狀清單堆疊
+    const stack: { type: "ul" | "ol"; items: React.ReactNode[] }[] = [];
+    const levels: { level: number; type: "ul" | "ol" }[] = [];
+
+    const flushStackToElems = () => {
+      while (stack.length > 0) {
+        const list = stack.pop()!;
+        const Tag = list.type;
+
+        const rendered = (
+          <Tag
+            key={`list-${stack.length}-${Math.random()}`}
+            className="list-outside mb-2 text-white"
+          >
+            {list.items}
+          </Tag>
+        );
+        if (stack.length > 0) {
+          stack[stack.length - 1].items.push(rendered);
+        } else {
+          elems.push(rendered);
+        }
+      }
+      levels.length = 0;
     };
 
+    let prevListLevel = -1;
+    let prevListType: "ul" | "ol" | null = null;
+
     lines.forEach((rawLine, idx) => {
-      // 檢測標題
       const trimmed = rawLine.trim();
+
+      if (
+        listType === "ul" &&
+        prevListType === "ol" &&
+        level === prevListLevel
+      ) {
+        level = level + 1;
+      }
+
+      // === 標題 ===
       const head = trimmed.match(/^(#{1,6})\s+(.*)$/);
       if (head) {
-        flushList();
+        flushStackToElems();
         const level = head[1].length;
-        const Tag = `h${level}` as unknown as keyof JSX.IntrinsicElements;
+        const Tag = `h${level}` as keyof JSX.IntrinsicElements;
         const size =
           level === 1
             ? "text-2xl"
@@ -90,64 +114,70 @@ export function RenderDynamicContent({ data }: Props) {
             ? "text-lg"
             : "text-base";
         elems.push(
-          <Tag key={idx} className={`font-bold mt-4 mb-2 ${size} text-white`}>
+          <Tag
+            key={`h-${idx}`}
+            className={`font-bold mt-4 mb-2 ${size} text-white`}
+          >
             {head[2]}
           </Tag>
         );
         return;
       }
 
-      // 檢測無序清單符號 - 或 *
-      if (/^[-*]\s+/.test(trimmed)) {
-        listType = "ul";
-        listItems.push(
-          <li key={idx} className="mb-1 text-white">
-            {parseInline(trimmed.replace(/^[-*]\s+/, ""))}
+      // === 巢狀清單（縮排 + 符號） ===
+      const indentMatch = rawLine.match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
+      if (indentMatch) {
+        const spaces = indentMatch[1].replace(/\t/g, "  "); // tab = 2 space
+        const level = Math.floor(spaces.length / 2); // 每兩空白 = 一層
+        const bullet = indentMatch[2];
+        const text = indentMatch[3];
+        const listType = /^\d+\./.test(bullet) ? "ol" : "ul";
+        const isOrdered = listType === "ol";
+        const displayText = isOrdered ? `${bullet} ${text}` : text;
+
+        // push 新層
+        while (levels.length <= level) {
+          stack.push({ type: listType, items: [] });
+          levels.push({ level, type: listType });
+        }
+
+        // pop 回上層
+        while (levels.length > level + 1) {
+          const list = stack.pop()!;
+          levels.pop();
+          const Tag = list.type;
+          const rendered = (
+            <Tag
+              key={`list-${idx}-${Math.random()}`}
+              className="list-outside list-disc pl-6 mb-2 text-white"
+            >
+              {list.items}
+            </Tag>
+          );
+          stack[stack.length - 1].items.push(rendered);
+        }
+
+        // 加入 <li>
+        stack[stack.length - 1].items.push(
+          <li key={`li-${idx}-${level}`} className="mb-1">
+            {parseInline(displayText)}
           </li>
         );
         return;
       }
 
-      // 檢測有序清單 1. 2.
-      if (/^\d+\.\s+/.test(trimmed)) {
-        listType = "ol";
-        listItems.push(
-          <li key={idx} className="mb-1 text-white">
-            {parseInline(trimmed.replace(/^\d+\.\s+/, ""))}
-          </li>
-        );
-        return;
-      }
-
-      // 檢測 Tab 縮排，自動轉成無序列表
-      const tabMatch = rawLine.match(/^(\t+)(.*)$/);
-      if (tabMatch) {
-        const level = tabMatch[1].length;
-        listType = "ul";
-        listItems.push(
-          <li
-            key={idx}
-            className="mb-1 text-white"
-            style={{ marginLeft: `${level * 1}rem` }}
-          >
-            {parseInline(tabMatch[2].trim())}
-          </li>
-        );
-        return;
-      }
-
-      // 普通段落
-      flushList();
+      // === 普通段落 ===
+      flushStackToElems();
       if (trimmed) {
         elems.push(
-          <p key={idx} className="mb-4 text-white">
+          <p key={`p-${idx}`} className="mb-4 text-white">
             {parseInline(trimmed)}
           </p>
         );
       }
     });
 
-    flushList();
+    flushStackToElems();
     return <>{elems}</>;
   }
 
