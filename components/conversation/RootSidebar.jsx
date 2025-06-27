@@ -126,7 +126,7 @@ export function RootSidebar() {
           ) : (
             conversationList.map((conversation) => {
               const name =
-                conversation.conversation_name?.trim() || "未命名對話";
+                conversation.conversation_name?.trim() || "新對話";
               return (
                 <div
                   key={conversation.conversation_uid}
