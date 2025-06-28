@@ -1,8 +1,9 @@
+// components/sidebar/RootSidebar.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { PlusIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,17 +21,17 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-
-import { MoreVertical, Trash2, Edit3 } from "lucide-react";
+import { MoreVertical, Trash2, Edit3, LogOut } from "lucide-react";
 
 import {
   getConversationList,
   deleteConversation,
-} from "../../app/service/conversation/ExternalService/apiService";
+} from "@/app/service/conversation/ExternalService/apiService";
 import { useRenameConversation } from "@/app/hooks/conversation/useRenameConversation";
 
 export function RootSidebar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
   const [conversationList, setConversationList] = useState([]);
 
@@ -43,6 +44,7 @@ export function RootSidebar() {
     handleRename,
   } = useRenameConversation(conversationList, setConversationList);
 
+  // fetch list
   const fetchConversations = async () => {
     const userUid = localStorage.getItem("user_uid");
     if (!userUid) {
@@ -51,13 +53,11 @@ export function RootSidebar() {
     }
     try {
       const data = await getConversationList(userUid);
-      if (data?.status === true && data?.data) {
+      if (data?.status && data.data) {
         setConversationList(data.data);
-      } else {
-        console.error("Failed to fetch conversation list:", data);
       }
-    } catch (error) {
-      console.error("API Error:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -66,25 +66,36 @@ export function RootSidebar() {
   }, []);
 
   useEffect(() => {
-    const handleUpdate = () => fetchConversations();
-    window.addEventListener("updateConversationList", handleUpdate);
-    return () =>
-      window.removeEventListener("updateConversationList", handleUpdate);
+    const onUpdate = () => fetchConversations();
+    window.addEventListener("updateConversationList", onUpdate);
+    return () => window.removeEventListener("updateConversationList", onUpdate);
   }, []);
 
+  // delete conversation
   const handleDelete = async (conversationUid) => {
     try {
-      const data = await deleteConversation(conversationUid);
-      if (data?.status === true) {
+      const res = await deleteConversation(conversationUid);
+      if (res?.status) {
         setConversationList((prev) =>
           prev.filter((c) => c.conversation_uid !== conversationUid)
         );
+        if (pathname === `/conversation/${conversationUid}`) {
+          router.push("/");
+        }
+        window.dispatchEvent(new Event("updateConversationList"));
+        setOpenMobile(false);
       } else {
-        console.error("Delete conversation failed:", data);
+        console.error("刪除對話失敗", res);
       }
-    } catch (error) {
-      console.error("Delete conversation API Error:", error);
+    } catch (err) {
+      console.error("刪除對話出錯", err);
     }
+  };
+
+  // logout handler
+  const handleLogout = () => {
+    localStorage.removeItem("user_uid");
+    router.push("/signin");
   };
 
   return (
@@ -95,16 +106,13 @@ export function RootSidebar() {
             <Link
               href="/"
               onClick={() => setOpenMobile(false)}
-              className="flex items-center gap-2"
+              className="text-lg font-semibold hover:bg-muted rounded-md px-2"
             >
-              <span className="text-lg font-semibold hover:bg-muted rounded-md px-2">
-                ITRI Intent-Based Chatbot
-              </span>
+              ITRI Intent-Based Chatbot
             </Link>
             <Button
               variant="ghost"
-              type="button"
-              className="p-2 h-fit"
+              className="p-2"
               onClick={() => {
                 setOpenMobile(false);
                 router.push("/");
@@ -124,40 +132,32 @@ export function RootSidebar() {
               尚無對話紀錄
             </div>
           ) : (
-            conversationList.map((conversation) => {
-              const name =
-                conversation.conversation_name?.trim() || "新對話";
+            conversationList.map((c) => {
+              const name = c.conversation_name || "新對話";
+              const truncated =
+                name.length > 20 ? name.slice(0, 20) + "..." : name;
               return (
                 <div
-                  key={conversation.conversation_uid}
+                  key={c.conversation_uid}
                   className="flex items-center px-2 py-1 hover:bg-accent hover:text-accent-foreground rounded-md"
                 >
-                  {editingConversation === conversation.conversation_uid ? (
+                  {editingConversation === c.conversation_uid ? (
                     <input
-                      type="text"
                       ref={inputRef}
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") handleRename();
                       }}
-                      onFocus={() =>
-                        inputRef.current.setSelectionRange(
-                          0,
-                          inputRef.current.value.length
-                        )
-                      }
-                      className="flex-1 border bg-background px-2 py-1 rounded-md"
+                      className="flex-1 border px-2 py-1 rounded-md bg-background"
                     />
                   ) : (
                     <Link
-                      href={`/conversation/${conversation.conversation_uid}`}
+                      href={`/conversation/${c.conversation_uid}`}
                       onClick={() => setOpenMobile(false)}
-                      className="flex-1 pr-1"
+                      className="flex-1 pr-2"
                     >
-                      <span title={conversation.conversation_name || name}>
-                        {name.length > 20 ? name.slice(0, 20) + "..." : name}
-                      </span>
+                      <span title={name}>{truncated}</span>
                     </Link>
                   )}
 
@@ -169,20 +169,16 @@ export function RootSidebar() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() => startEditing(conversation)}
-                        className="cursor-pointer"
+                        onClick={() => startEditing(c)}
+                        className="cursor-pointer flex items-center gap-2"
                       >
-                        <Edit3 className="mr-2 h-4 w-4" />
-                        重新命名
+                        <Edit3 className="h-4 w-4" /> 重新命名
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="text-destructive cursor-pointer"
-                        onClick={() =>
-                          handleDelete(conversation.conversation_uid)
-                        }
+                        onClick={() => handleDelete(c.conversation_uid)}
+                        className="cursor-pointer text-destructive flex items-center gap-2"
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        刪除
+                        <Trash2 className="h-4 w-4" /> 刪除
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -194,7 +190,13 @@ export function RootSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="px-2 py-2 text-sm text-muted-foreground" />
+        <Button
+          variant="ghost"
+          className="w-full flex items-center gap-2 px-2"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4" /> 登出
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );
