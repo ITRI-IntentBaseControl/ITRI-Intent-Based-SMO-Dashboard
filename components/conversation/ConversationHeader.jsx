@@ -14,7 +14,7 @@ import { useWindowSize } from "usehooks-ts";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useRouter } from "next/navigation";
 
-export function                                                                     ConversationHeader() {
+export function ConversationHeader() {
   const router = useRouter();
   const { width: windowWidth } = useWindowSize();
   const { open } = useSidebar();

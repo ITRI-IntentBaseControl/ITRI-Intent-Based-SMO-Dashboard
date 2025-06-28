@@ -50,7 +50,7 @@ export default function HomePage() {
       // 6. 五秒後自動觸發updateConversationList，通知RootSidebar更新
       setTimeout(() => {
         window.dispatchEvent(new Event("updateConversationList"));
-      }, 5000);
+      }, 10000);
     } catch (error) {
       console.error("Create conversation error:", error);
       alert("建立對話失敗，請稍後再試。");
