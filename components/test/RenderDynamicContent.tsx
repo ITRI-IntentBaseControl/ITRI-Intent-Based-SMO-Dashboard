@@ -21,18 +21,28 @@ export function RenderDynamicContent({ data }: Props) {
       ? input.replace(/\\n/g, "\n").replace(/\\r/g, "")
       : JSON.stringify(input, null, 2);
 
+  // 1. split into Detected blocks, but first isolate back-to-back tables
   const blocks: Detected[] = data
     .flatMap((d) => {
       const raw = normalize(d.content);
-      const isImg =
-        d.type === "image" || /^data:image\/\w+;base64,/.test(raw.trim());
-      if (isImg) {
+
+      // images pass through
+      if (d.type === "image" || /^data:image\/\w+;base64,/.test(raw.trim())) {
         return [{ type: "image", content: raw }];
       }
-      return splitMarkdownBlocks(raw);
+
+      // split raw into segments whenever a table header+divider appears
+      // lookahead for lines:
+      //   | ... | ... |
+      //   | :--- | --- |
+      const tableSplitRegex = /(?=^\|.*\|\s*$\r?\n^\|?[:\- ]+\|.*$)/m;
+      const segments = raw.split(tableSplitRegex);
+
+      // for each segment, use existing splitMarkdownBlocks
+      return segments.flatMap((seg) => splitMarkdownBlocks(seg));
     })
     .filter((b) => !(b.type === "markdown" && !b.content.trim()));
-
+  console.log(data);
   // 2. 圖片 Modal
   const [img, setImg] = useState<string | null>(null);
 
@@ -71,7 +81,7 @@ export function RenderDynamicContent({ data }: Props) {
         const rendered = (
           <Tag
             key={`list-${stack.length}-${Math.random()}`}
-            className="list-outside mb-2 text-white"
+            className="list-outside mb-2 text-zinc-200"
           >
             {list.items}
           </Tag>
@@ -149,7 +159,7 @@ export function RenderDynamicContent({ data }: Props) {
           const rendered = (
             <Tag
               key={`list-${idx}-${Math.random()}`}
-              className="list-outside list-disc pl-6 mb-2 text-white"
+              className="list-outside list-disc pl-6 mb-2 text-stone-300"
             >
               {list.items}
             </Tag>
@@ -170,7 +180,7 @@ export function RenderDynamicContent({ data }: Props) {
       flushStackToElems();
       if (trimmed) {
         elems.push(
-          <p key={`p-${idx}`} className="mb-4 text-white">
+          <p key={`p-${idx}`} className="mb-4 text-stone-300">
             {parseInline(trimmed)}
           </p>
         );
@@ -216,7 +226,7 @@ export function RenderDynamicContent({ data }: Props) {
                 {rows.length > 10 && (
                   <button
                     onClick={() => toggle(i)}
-                    className="mt-2 px-3 py-1 border rounded text-sm bg-primary hover:bg-primary-foreground text-primary-foreground"
+                    className="mt-2 px-3 py-1 border rounded text-sm bg-primary hover:bg-primary text-primary-foreground"
                   >
                     {expanded[i] ? "收起" : "顯示全部"}
                   </button>

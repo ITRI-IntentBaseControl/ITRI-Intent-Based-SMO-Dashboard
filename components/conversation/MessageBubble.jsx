@@ -23,7 +23,7 @@ export function MessageBubble({ msg, isTyping = false, onSelectOption }) {
             flex flex-col gap-2 whitespace-pre-wrap break-words
             ${
               isUser
-                ? "max-w-[50%] bg-primary text-primary-foreground px-3 py-2 rounded-xl"
+                ? "max-w-[50%] bg-primary text-primary-foreground px-3 py-2 rounded-xl bg-gray-300"
                 : "max-w-[80%]"
             }
           `}
