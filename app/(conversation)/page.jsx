@@ -46,6 +46,11 @@ export default function HomePage() {
 
       // 5. 導航頁面到 /conversation/[conversation_uid]
       router.push(`/conversation/${conversation_uid}`);
+
+      // 6. 五秒後自動觸發updateConversationList，通知RootSidebar更新
+      setTimeout(() => {
+        window.dispatchEvent(new Event("updateConversationList"));
+      }, 10000);
     } catch (error) {
       console.error("Create conversation error:", error);
       alert("建立對話失敗，請稍後再試。");

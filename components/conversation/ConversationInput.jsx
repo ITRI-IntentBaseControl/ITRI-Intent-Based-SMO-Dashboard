@@ -8,10 +8,10 @@ export function ConversationInput({
   onChange,
   onSend,
   isLoading,
-  isDisabled = false,   // true = 仍可打字，但禁止送出
+  isDisabled = false, // true = 仍可打字，但禁止送出
 }) {
   return (
-    <div className="w-1/2 mx-auto py-4 flex flex-col gap-2 rounded-2xl border border-border bg-muted">
+    <div className="w-auto mx-auto py-4 flex flex-col gap-2 rounded-2xl border border-border bg-muted">
       {/* 多行輸入框 —— 不再 disabled */}
       <textarea
         value={inputValue}

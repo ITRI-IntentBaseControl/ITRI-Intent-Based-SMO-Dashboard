@@ -12,16 +12,6 @@ export function useConversation(conversationId) {
   const [inputValue, setInputValue] = useState("");
   const [didAutoSend, setDidAutoSend] = useState(false);
 
-  // 1) 先呼叫 useTypingEffect
-  const {
-    typingMessage,
-    pushPendingMessage,
-    showThinking,
-    clearTypingMessage,
-  } = useTypingEffect([], (finishedMsg) => {
-    setChatMessages((prev) => [...prev, finishedMsg]);
-  });
-
   // 2) 再宣告 handleOnMessage，再給 useLoadConversationAndConnect 使用
   const handleOnMessage = useCallback(
     ({ type, data }) => {
@@ -43,17 +33,7 @@ export function useConversation(conversationId) {
         case "ws-message": {
           const message = inboundMessageDecorator(data);
           if (!message) return;
-          
-          if (message.role === "llm") {
-            //清除Thinking...
-            if (typingMessage?.content === "Thinking...") {
-              clearTypingMessage();
-            }
-            
-            pushPendingMessage(message);
-          } else {
-            setChatMessages((prev) => [...prev, message]);
-          }
+          setChatMessages((prev) => [...prev, message]);
           break;
         }
         default:
@@ -61,7 +41,7 @@ export function useConversation(conversationId) {
       }
     },
     // 依賴這些變數時，要仔細檢查是否有可能造成無限迴圈
-    [didAutoSend, typingMessage, clearTypingMessage, pushPendingMessage]
+    [didAutoSend]
   );
 
   // 3) 最後呼叫 useLoadConversationAndConnect
@@ -98,9 +78,8 @@ export function useConversation(conversationId) {
     if (!wsServiceRef.current) return;
 
     //顯示Thinking...效果，不加入訊息隊列
-    showThinking();
 
-    const payload = outboundMessageDecorator(content, "demo", conversationId);
+    const payload = outboundMessageDecorator(content, conversationId);
     wsServiceRef.current.send(payload);
   }
 
@@ -110,7 +89,6 @@ export function useConversation(conversationId) {
     inputValue,
     setInputValue,
     chatMessages,
-    typingMessage,
     handleSendMessage,
   };
 }

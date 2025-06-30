@@ -1,61 +1,49 @@
+// ConversationMessages.tsx
 "use client";
 
 import React, { useEffect, useRef } from "react";
 import { MessageBubble } from "./MessageBubble";
 
-/**
- * Props:
- * - chatMessages: 已完成顯示的訊息 (陣列)
- * - typingMessage: 正在打字中的訊息，可為 null
- *
- * 此元件只負責渲染:
- * - chatMessages: 完整訊息列表
- * - typingMessage: 正在打字的訊息（若有）
- */
-export function ConversationMessages({
-  chatMessages,
-  typingMessage,
-  onSelectOption,
-}) {
-  // 1. 建立 ref，指向可滾動的容器
+export function ConversationMessages({ chatMessages, onSelectOption }) {
   const containerRef = useRef(null);
+  const bottomRef = useRef(null);
 
-  // 2. 監聽 chatMessages 與 typingMessage，每次更新就捲動到底部
+  // 只要 chatMessages 陣列長度改變，就滾到底
   useEffect(() => {
-    setTimeout(scrollToBottom, 50);
-  }, [chatMessages, typingMessage]);
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages.length]);
 
-  // 3. 自動捲動到底部的函式
-  function scrollToBottom() {
-    if (containerRef.current) {
-      containerRef.current.scrollTo({
-        top: containerRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }
+  // 判斷最後一筆是否為 user
+  const lastMsg = chatMessages[chatMessages.length - 1];
+  const shouldShowThinking = lastMsg?.role === "user";
 
   return (
-    // 4. 讓 ref 指向可滾動的容器
-    <div ref={containerRef} className="flex-1 overflow-y-auto px-2 py-4">
+    <div
+      ref={containerRef}
+      className="min-h-0 flex-1 overflow-y-auto px-2 py-4"
+    >
       <div className="mx-auto max-w-3xl flex flex-col gap-6">
-        {/* 已完成顯示的訊息 */}
-        {chatMessages.map((m, index) => (
+        {/* 先渲染所有聊天訊息，皆以已完成顯示 */}
+        {chatMessages.map((m, idx) => (
           <MessageBubble
-            key={m.id ? m.id : m.timestamp ? m.timestamp : index}
+            key={m.id ?? m.timestamp ?? idx}
             msg={m}
             onSelectOption={onSelectOption}
           />
         ))}
 
-        {/* 正在打字中的訊息 (typingMessage) */}
-        {typingMessage && (
+        {/* 如果最後一筆是 user，就顯示一個助理打字中的提示 */}
+        {shouldShowThinking && (
           <MessageBubble
-            msg={typingMessage}
+            key="thinking"
+            msg={{ role: "llm", content: "Thinking…", text_content: [] }}
             isTyping
             onSelectOption={onSelectOption}
           />
         )}
+
+        {/* 滾動目標節點 */}
+        <div ref={bottomRef} />
       </div>
     </div>
   );
