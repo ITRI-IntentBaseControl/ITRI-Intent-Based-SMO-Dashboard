@@ -46,6 +46,7 @@ export default function ConversationClient({ conversationId }) {
               chatMessages={chatMessages}
               typingMessage={typingMessage}
               onSelectOption={handleOptionSelect}
+              conversationId={conversationId}
             />
           </div>
         </div>
@@ -63,6 +64,7 @@ export default function ConversationClient({ conversationId }) {
             onSend={handleSendMessage}
             isLoading={isLoading}
             isDisabled={isInputDisabled}
+            conversationId={conversationId}
           />
         </div>
       </div>

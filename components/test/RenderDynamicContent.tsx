@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { splitMarkdownBlocks, Detected } from "./markdown-detector";
+import { getImage } from "@/app/service/conversation/ExternalService/apiService";
 
 interface RawItem {
   type?: "image" | "message";
@@ -11,10 +12,105 @@ interface RawItem {
 
 interface Props {
   data: RawItem[];
+  conversationId: string;
   onSelectOption?: (...args: any[]) => void;
 }
 
-export function RenderDynamicContent({ data }: Props) {
+interface ConversationImageBlockProps {
+  i: number;
+  conversationId: string;
+  imageId: string;
+  setImg: (url: string | null) => void;
+}
+
+const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
+  i,
+  conversationId,
+  imageId,
+  setImg,
+}) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let objectUrl: string | null = null; // 用來儲存 createObjectURL 返回的 URL
+
+    const fetchAndSetImage = async () => {
+      if (!conversationId || !imageId) {
+        setError("Missing conversationId or imageId for image.");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const imageBlob = await getImage(conversationId, imageId); // 呼叫新的 getImage 函數
+
+        if (imageBlob) {
+          objectUrl = URL.createObjectURL(imageBlob); // 創建臨時 URL
+          setImageUrl(objectUrl); // 更新 state
+        } else {
+          setError("Failed to retrieve image data.");
+        }
+      } catch (err: any) {
+        console.error("Error fetching image in component:", err);
+        setError(`Failed to load image: ${err.message || "Unknown error"}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAndSetImage();
+
+    // --- 清理函數 ---
+    return () => {
+      // 在組件卸載時，或在依賴項改變而 useEffect 再次執行之前，會執行這個函數
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl); // 釋放記憶體
+        console.log(`Released Blob URL: ${objectUrl}`);
+      }
+    };
+  }, [conversationId, imageId]); // 依賴項：當這些值改變時，useEffect 會重新執行
+
+  if (isLoading) {
+    return (
+      <div key={i} className="p-3 mb-4 text-center">
+        Loading image...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div key={i} className="p-3 mb-4 text-red-500 text-center">
+        Error: {error}
+      </div>
+    );
+  }
+
+  if (!imageUrl) {
+    return null; // 或者顯示一個預設的佔位符圖片
+  }
+
+  return (
+    <div
+      key={i}
+      className="p-3 border rounded cursor-pointer mb-4"
+      onClick={() => setImg(imageUrl)} // 點擊時傳遞 Blob URL 給父組件的 setImg
+    >
+      <img
+        src={imageUrl} // 使用 Blob URL
+        alt={`image-${i}`}
+        className="max-w-full h-auto rounded"
+      />
+    </div>
+  );
+};
+
+export function RenderDynamicContent({ data, conversationId }: Props) {
   // 1. 拆塊：圖片 vs. Markdown/code/table
   const normalize = (input: unknown) =>
     typeof input === "string"
@@ -27,7 +123,7 @@ export function RenderDynamicContent({ data }: Props) {
       const raw = normalize(d.content);
 
       // images pass through
-      if (d.type === "image" || /^data:image\/\w+;base64,/.test(raw.trim())) {
+      if (d.type === "image") {
         return [{ type: "image", content: raw }];
       }
 
@@ -246,21 +342,14 @@ export function RenderDynamicContent({ data }: Props) {
             );
 
           case "image": {
-            const src = blk.content.startsWith("data:image")
-              ? blk.content
-              : `data:image/png;base64,${blk.content}`;
             return (
-              <div
+              <ConversationImageBlock
                 key={i}
-                className="p-3 border rounded cursor-pointer mb-4"
-                onClick={() => setImg(src)}
-              >
-                <img
-                  src={src}
-                  alt={`image-${i}`}
-                  className="max-w-full h-auto rounded"
-                />
-              </div>
+                i={i}
+                conversationId={conversationId}
+                imageId={blk.content}
+                setImg={setImg}
+              />
             );
           }
 

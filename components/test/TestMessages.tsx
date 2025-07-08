@@ -16,6 +16,7 @@ export default function TestMessages({
   chatMessages,
   typingMessage,
   onSelectOption,
+  conversationId,
 }) {
   const containerRef = useRef(null);
 
@@ -34,7 +35,7 @@ export default function TestMessages({
       <div className="mx-auto max-w-3xl flex flex-col gap-6">
         {/* 已完成顯示的訊息 */}
         {chatMessages.map((m, i) => (
-          <TestMessageBubble key={i} msg={m} onSelectOption={onSelectOption} />
+          <TestMessageBubble key={i} msg={m} onSelectOption={onSelectOption} conversationId={conversationId}/>
         ))}
 
         {/* 正在打字中的訊息 (typingMessage) */}
@@ -43,6 +44,7 @@ export default function TestMessages({
             msg={typingMessage}
             isTyping
             onSelectOption={onSelectOption}
+            conversationId={conversationId}
           />
         )}
       </div>
