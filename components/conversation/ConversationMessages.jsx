@@ -4,7 +4,11 @@
 import React, { useEffect, useRef } from "react";
 import { MessageBubble } from "./MessageBubble";
 
-export function ConversationMessages({ chatMessages, onSelectOption }) {
+export function ConversationMessages({
+  chatMessages,
+  onSelectOption,
+  conversationId,
+}) {
   const containerRef = useRef(null);
   const bottomRef = useRef(null);
 
@@ -29,6 +33,7 @@ export function ConversationMessages({ chatMessages, onSelectOption }) {
             key={m.id ?? m.timestamp ?? idx}
             msg={m}
             onSelectOption={onSelectOption}
+            conversationId={conversationId}
           />
         ))}
 
@@ -39,6 +44,7 @@ export function ConversationMessages({ chatMessages, onSelectOption }) {
             msg={{ role: "llm", content: "Thinking…", text_content: [] }}
             isTyping
             onSelectOption={onSelectOption}
+            conversationId={conversationId}
           />
         )}
 

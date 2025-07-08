@@ -59,6 +59,7 @@ export default function TestClient({
         chatMessages={chatMessages}
         typingMessage={typingMessage}
         onSelectOption={handleOptionSelect}
+        conversationId={conversationUid}
       />
 
       {/* 輸入區域 */}

@@ -9,7 +9,12 @@ import { RenderDynamicContent } from "./RenderDynamicContent";
  * - llm(最終): { role: "llm", text_content: [{ type, content }, ...] }
  * - llm(打字中): { role: "llm", content: "...(partial text)" }
  */
-export function TestMessageBubble({ msg, isTyping = false, onSelectOption }) {
+export function TestMessageBubble({
+  msg,
+  isTyping = false,
+  onSelectOption,
+  conversationId,
+}) {
   const { role, content, text_content } = msg;
   const isUser = role === "user";
   const isAssistant = role === "llm";
@@ -43,6 +48,7 @@ export function TestMessageBubble({ msg, isTyping = false, onSelectOption }) {
             // 有 text_content -> 用 RenderDynamicContent 來顯示多段型態
             <RenderDynamicContent
               data={text_content}
+              conversationId={conversationId}
               onSelectOption={onSelectOption}
             />
           )}
