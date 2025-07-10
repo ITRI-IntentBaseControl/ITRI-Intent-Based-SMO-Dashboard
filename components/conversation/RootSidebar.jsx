@@ -75,7 +75,7 @@ export function RootSidebar() {
   const handleDelete = async (conversationUid) => {
     try {
       const res = await deleteConversation(conversationUid);
-      if (res?.status) {
+        if (res?.status_code === 200) {
         setConversationList((prev) =>
           prev.filter((c) => c.conversation_uid !== conversationUid)
         );
