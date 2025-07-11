@@ -15,8 +15,8 @@ const ROLE_MAPPING = {
 export function inboundMessageDecorator(rawData) {
   try {
     const data = JSON.parse(rawData);
-    const { text_content, role } = data;
-    return { role, text_content: text_content };
+    const { text_content, role, event_type } = data;
+    return { event_type, role, text_content: text_content };
   } catch (err) {
     console.error("[inboundMessageDecorator] parse error:", err, rawData);
     return null;
