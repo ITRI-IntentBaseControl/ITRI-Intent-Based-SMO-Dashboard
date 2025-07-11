@@ -8,38 +8,38 @@ export function ConversationInput({
   onChange,
   onSend,
   isLoading,
-  isDisabled = false, // true = 仍可打字，但禁止送出
+  isSending = false, // true = 仍可打字，但禁止送出
 }) {
   return (
     <div className="w-auto mx-auto py-4 flex flex-col gap-2 rounded-2xl border border-border bg-muted">
-      {/* 多行輸入框 —— 不再 disabled */}
+      {/* 上半部：多行輸入框 —— 修改 disabled 屬性 */}
       <textarea
         value={inputValue}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={isDisabled ? "Assistant 正在輸出中…" : "Type message..."}
+        placeholder={isSending ? "Assistant 正在輸出中…" : "Type message..."}
         className="
           flex-1 bg-muted px-3 py-2 text-sm leading-6
           resize-y overflow-auto focus-visible:outline-none
         "
+        // 只要 isSending，就完全禁止 Enter 送出；但可繼續打字與 Shift+Enter 換行
         onKeyDown={(e) => {
-          // 只要 isDisabled，就完全禁止 Enter 送出；但可繼續打字與 Shift+Enter 換行
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            if (!isDisabled && inputValue.trim() !== "") {
+            if (!isSending && inputValue.trim() !== "") {
               onSend(inputValue);
             }
           }
         }}
       />
 
-      {/* 送出按鈕 —— 仍照 isDisabled 鎖住 */}
+      {/* 下半部：送出按鈕 —— 仍照 isSending 鎖住 */}
       <div className="flex justify-end">
         <Button
           onClick={() => {
-            if (isDisabled || inputValue.trim() === "") return;
+            if (isSending || inputValue.trim() === "") return;
             onSend(inputValue);
           }}
-          disabled={isLoading || !inputValue.trim() || isDisabled}
+          disabled={isLoading || !inputValue.trim() || isSending}
           className="rounded-xl px-3 py-2 h-fit mt-2 mr-2"
         >
           {isLoading ? "Sending..." : "→"}
