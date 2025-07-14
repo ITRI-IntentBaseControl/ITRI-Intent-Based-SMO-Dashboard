@@ -11,38 +11,50 @@ export function useConversation(conversationId) {
   const [chatMessages, setChatMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [didAutoSend, setDidAutoSend] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   // 2) 再宣告 handleOnMessage，再給 useLoadConversationAndConnect 使用
-  const handleOnMessage = useCallback(
-    ({ type, data }) => {
-      switch (type) {
-        case "history": {
-          // 直接把 text_content 整包塞進去，保留陣列形式
-          const mapped = data.map((item) => ({
-            role: item.role,
-            text_content: item.text_content,
-            // 如果想另外保留預覽用的 content，也可以再拼接
-            content: item.text_content.map((t) => t.content).join("\n"),
-          }));
-          setChatMessages(mapped);
-          break;
-        }
-        case "ws-open":
-          handleAutoSend();
-          break;
-        case "ws-message": {
-          const message = inboundMessageDecorator(data);
-          if (!message) return;
-          setChatMessages((prev) => [...prev, message]);
-          break;
-        }
-        default:
-          break;
+  const handleOnMessage = useCallback(({ type, data }) => {
+    switch (type) {
+      case "history": {
+        // 直接把 text_content 整包塞進去，保留陣列形式
+        const mapped = data.map((item) => ({
+          role: item.role,
+          text_content: item.text_content,
+          // 如果想另外保留預覽用的 content，也可以再拼接
+          content: item.text_content.map((t) => t.content).join("\n"),
+        }));
+        setChatMessages(mapped);
+        break;
       }
-    },
-    // 依賴這些變數時，要仔細檢查是否有可能造成無限迴圈
-    [didAutoSend]
-  );
+      case "ws-open":
+        handleAutoSend();
+        break;
+      case "ws-message": {
+        const message = inboundMessageDecorator(data);
+        if (!message) return;
+        const eventType = message.event_type ? String(message.event_type) : "";
+
+        if (eventType.includes("2")) {
+          // 串流訊息
+          console.log("收到訊息更新:", message.text_content);
+          setChatMessages((prev) => [...prev, message]);
+        } else if (eventType.includes("3")) {
+          // 串流訊息結束
+          console.log("結束訊息:", message.text_content);
+          setIsSending(false);
+        } else {
+          // 如果都不包含，執行預設行為（例如處理非串流訊息或未知類型）
+          console.warn("收到未知類型或不含2/3的 ws-message:", message);
+          setChatMessages((prev) => [...prev, message]);
+          setIsSending(false);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }, []);
 
   // 3) 最後呼叫 useLoadConversationAndConnect
   const { isLoading, isWsConnected, wsServiceRef } =
@@ -55,6 +67,7 @@ export function useConversation(conversationId) {
     const key = `init_msg_${conversationId}`;
     const initMsg = localStorage.getItem(key);
     if (initMsg) {
+      setIsSending(true);
       setChatMessages((prev) => [...prev, { role: "user", content: initMsg }]);
       sendMessage(initMsg);
       localStorage.removeItem(key);
@@ -63,6 +76,8 @@ export function useConversation(conversationId) {
   }
 
   function handleSendMessage(msg) {
+    if (isSending) return;
+    setIsSending(true);
     //目前先暫訂send的全都是string，之後有圖片再改
     if (msg && typeof msg !== "string") {
       msg = inputValue;
@@ -90,5 +105,6 @@ export function useConversation(conversationId) {
     setInputValue,
     chatMessages,
     handleSendMessage,
+    isSending,
   };
 }

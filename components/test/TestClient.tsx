@@ -42,6 +42,7 @@ export default function TestClient({
     chatMessages,
     typingMessage,
     handleSendMessage,
+    isSending,
   } = useConversation(conversationUid, initialMessages, defaultUserInput);
 
   //按下option後讓文字進到使用者輸入框
@@ -59,6 +60,7 @@ export default function TestClient({
         chatMessages={chatMessages}
         typingMessage={typingMessage}
         onSelectOption={handleOptionSelect}
+        conversationId={conversationUid}
       />
 
       {/* 輸入區域 */}
@@ -67,6 +69,7 @@ export default function TestClient({
         onChange={setInputValue}
         onSend={handleSendMessage}
         isLoading={isLoading}
+        isSending={isSending}
       />
     </div>
   );

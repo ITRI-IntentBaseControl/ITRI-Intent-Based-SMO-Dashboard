@@ -9,6 +9,7 @@ export default function HomePage() {
   const router = useRouter();
   const [userMessage, setUserMessage] = useState("");
   const [userUid, setUserUid] = useState(null);
+  const [isSending, setIsSending] = useState(false);
 
   // 在元件載入時從 localStorage 抓取 user_uid
   useEffect(() => {
@@ -20,6 +21,8 @@ export default function HomePage() {
 
   // 當使用者輸入訊息後
   const handleSend = async () => {
+    if (isSending) return;
+
     try {
       // 確認有取得 userUid 才進行 API 呼叫
       if (!userUid) {
@@ -31,6 +34,8 @@ export default function HomePage() {
         alert("請先輸入訊息");
         return;
       }
+
+      setIsSending(true);
 
       // 1. 呼叫後端 API 建立新的對話
       const data = await createConversation(userUid);
@@ -91,12 +96,13 @@ export default function HomePage() {
             focus-visible:outline-none
           "
           onKeyDown={handleKeyDown}
+          disabled={isSending}
         />
 
         <div className="flex justify-end">
           <Button
             onClick={handleSend}
-            disabled={!userMessage.trim()}
+            disabled={!userMessage.trim() || isSending}
             className="
               rounded-xl
               px-3

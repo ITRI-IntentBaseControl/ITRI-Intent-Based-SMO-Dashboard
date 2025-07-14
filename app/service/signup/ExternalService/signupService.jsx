@@ -4,15 +4,15 @@ import { postAPI } from "@/app/utils/entrypoint";
 export async function register(formData) {
   try {
     // 1. 組裝參數
-    const email = formData.get("email");
-    const password = formData.get("password");
-    const username = formData.get("username");
+    const user_uemail = formData.get("email");
+    const user_password = formData.get("password");
+    const user_uname = formData.get("username");
 
     // 2. 發送 api 到後端
     const response = await postAPI("metadata_mgt/UserManager/create_user", {
-      email,
-      password,
-      username,
+      user_uemail,
+      user_password,
+      user_uname,
     });
     // 3. 依狀態碼或後端回傳 JSON 進行判斷
     if (response.status === 400) {

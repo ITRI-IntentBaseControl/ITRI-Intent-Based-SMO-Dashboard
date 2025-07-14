@@ -24,10 +24,8 @@ export default function ConversationClient({ conversationId }) {
     chatMessages,
     typingMessage,
     handleSendMessage,
+    isSending,
   } = useConversation(conversationId);
-
-  // 只要 typingMessage.content 有字就鎖定輸入
-  const isInputDisabled = Boolean(typingMessage?.content?.trim());
 
   function handleOptionSelect(label) {
     setInputValue((prev) => (prev ? prev + " " + label : label));
@@ -46,6 +44,7 @@ export default function ConversationClient({ conversationId }) {
               chatMessages={chatMessages}
               typingMessage={typingMessage}
               onSelectOption={handleOptionSelect}
+              conversationId={conversationId}
             />
           </div>
         </div>
@@ -62,7 +61,8 @@ export default function ConversationClient({ conversationId }) {
             onChange={setInputValue}
             onSend={handleSendMessage}
             isLoading={isLoading}
-            isDisabled={isInputDisabled}
+            isSending={isSending}
+            conversationId={conversationId}
           />
         </div>
       </div>

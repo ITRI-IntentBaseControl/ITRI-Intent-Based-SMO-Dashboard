@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getConversationHistory } from "../../service/conversation/ExternalService/apiService";
 import { createWebSocketService } from "../../service/conversation/ExternalService/websocketService";
 
@@ -11,6 +12,7 @@ import { createWebSocketService } from "../../service/conversation/ExternalServi
  * @param {function} onMessage - 不再放在依賴陣列裡，而是用 ref 讀取
  */
 export function useLoadConversationAndConnect(conversationId, onMessage) {
+  const router = useRouter();
   const wsServiceRef = useRef(null);
   const onMessageRef = useRef(onMessage);
   const HOST = process.env.HOST;
@@ -31,7 +33,7 @@ export function useLoadConversationAndConnect(conversationId, onMessage) {
 
         // 1) 載入歷史
         const res = await getConversationHistory(conversationId);
-        if (mounted && res.status === true && Array.isArray(res.data)) {
+        if (mounted && res.status_code === 200 && Array.isArray(res.data)) {
           onMessageRef.current({ type: "history", data: res.data });
         }
         // 2) 建立 WebSocket 連線
@@ -55,6 +57,10 @@ export function useLoadConversationAndConnect(conversationId, onMessage) {
         wsServiceRef.current = service;
       } catch (err) {
         console.error("[useLoadConversationAndConnect] init error:", err);
+        if (mounted) {
+          router.push("/");
+          router.refresh();
+        }
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -69,7 +75,7 @@ export function useLoadConversationAndConnect(conversationId, onMessage) {
       }
     };
     // 這裡不放 onMessage
-  }, [conversationId]);
+  }, [conversationId, router]);
 
   return {
     isLoading,

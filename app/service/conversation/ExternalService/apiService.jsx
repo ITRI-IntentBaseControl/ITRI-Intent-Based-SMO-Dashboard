@@ -9,7 +9,7 @@ export async function getConversationList(userUid) {
       "conversation_mgt/ConversationManager/get_conversation_list",
       { user_uid: userUid }
     );
-    return response.data; // { status, message, data }
+    return response.data; // { status_code, message, data }
   } catch (error) {
     console.error("[getConversationList] API Error:", error);
     throw error;
@@ -24,7 +24,7 @@ export async function deleteConversation(conversationUid) {
       "conversation_mgt/ConversationManager/delete_conversation",
       { conversation_uid: conversationUid }
     );
-    return response.data; // { status, message, ... }
+    return response.data; // { status_code, message, ... }
   } catch (error) {
     console.error("[deleteConversation] API Error:", error);
     throw error;
@@ -42,7 +42,7 @@ export async function renameConversation(conversationUid, newName) {
         conversation_name: newName,
       }
     );
-    return response.data; // { status, message, ... }
+    return response.data; // { status_code, message, ... }
   } catch (error) {
     console.error("[renameConversation] API Error:", error);
     throw error;
@@ -61,7 +61,7 @@ export async function getConversationHistory(conversationUid) {
 
     // 檢查回傳
     // Axios 返回結構:
-    //   { status: number, data: { status: boolean, message: string, data: [...] } }
+    //   { status: number, data: { status_code: number, message: string, data: [...] } }
     if (response.status !== 200) {
       throw new Error(`getConversationHistory failed: ${response.status}`);
     }
@@ -86,4 +86,49 @@ export async function createConversation(user_uid) {
     { user_uid }
   );
   return response.data;
+}
+
+/** 取得對話照片 */
+export async function getImage(conversationUid, imageUid) {
+  try {
+    // 發送 POST 請求，並要求 responseType 為 'blob'
+    const response = await postAPI(
+      "conversation_mgt/ImageManager/get_image", 
+      {
+        conversation_uid: conversationUid,
+        image_uid: imageUid,
+      }, 
+      { responseType: 'blob' }
+    );
+
+    // 檢查響應是否為錯誤實例
+    if (response instanceof Error) {
+      throw response;
+    }
+
+    // 檢查響應數據是否為 Blob
+    if (response.data instanceof Blob) {
+      return response.data;
+    } else {
+      // 如果不是 Blob，可能是一個 JSON 錯誤訊息
+      try {
+        // 嘗試將非 Blob 數據讀取為文本，然後解析為 JSON 錯誤訊息
+        const errorText = await new Response(response.data).text();
+        const errorJson = JSON.parse(errorText);
+        console.error("getImage API Error (non-blob response):", errorJson.error || "Unknown error");
+        return null;
+      } catch (parseError) {
+        // 如果無法解析為 JSON，則直接報錯
+        console.error(
+          "getImage API Error: Unexpected response data type.",
+          parseError,
+          response.data
+        );
+        return null;
+      }
+    }
+  } catch (error) {
+    console.error("[getImage] API Error:", error);
+    return null; // 捕獲錯誤並返回 null
+  }
 }

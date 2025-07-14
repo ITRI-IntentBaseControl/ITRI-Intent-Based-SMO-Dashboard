@@ -4,7 +4,12 @@ import { SparklesIcon } from "@/components/icons";
 import { motion } from "framer-motion";
 import { RenderDynamicContent } from "../test/RenderDynamicContent";
 
-export function MessageBubble({ msg, isTyping = false, onSelectOption }) {
+export function MessageBubble({
+  msg,
+  isTyping = false,
+  onSelectOption,
+  conversationId,
+}) {
   const { role, text_content } = msg;
   const isUser = role === "user";
   const isAssistant = role === "llm";
@@ -41,6 +46,7 @@ export function MessageBubble({ msg, isTyping = false, onSelectOption }) {
                 <RenderDynamicContent
                   data={text_content}
                   onSelectOption={onSelectOption}
+                  conversationId={conversationId}
                 />
               </motion.div>
             ) : isTyping ? (
