@@ -9,7 +9,7 @@ export async function getConversationList(userUid) {
       "conversation_mgt/ConversationManager/get_conversation_list",
       { user_uid: userUid }
     );
-    return response.data; // { status, message, data }
+    return response.data; // { status_code, message, data }
   } catch (error) {
     console.error("[getConversationList] API Error:", error);
     throw error;
@@ -24,7 +24,7 @@ export async function deleteConversation(conversationUid) {
       "conversation_mgt/ConversationManager/delete_conversation",
       { conversation_uid: conversationUid }
     );
-    return response.data; // { status, message, ... }
+    return response.data; // { status_code, message, ... }
   } catch (error) {
     console.error("[deleteConversation] API Error:", error);
     throw error;
@@ -42,7 +42,7 @@ export async function renameConversation(conversationUid, newName) {
         conversation_name: newName,
       }
     );
-    return response.data; // { status, message, ... }
+    return response.data; // { status_code, message, ... }
   } catch (error) {
     console.error("[renameConversation] API Error:", error);
     throw error;
@@ -61,7 +61,7 @@ export async function getConversationHistory(conversationUid) {
 
     // 檢查回傳
     // Axios 返回結構:
-    //   { status: number, data: { status: boolean, message: string, data: [...] } }
+    //   { status: number, data: { status_code: number, message: string, data: [...] } }
     if (response.status !== 200) {
       throw new Error(`getConversationHistory failed: ${response.status}`);
     }

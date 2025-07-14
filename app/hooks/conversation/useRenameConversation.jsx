@@ -66,7 +66,7 @@ export function useRenameConversation(conversationList, setConversationList) {
     }
     try {
       const data = await renameConversation(editingConversation, editValue);
-      if (data?.status) {
+      if (data?.status_code) {
         setConversationList((prev) =>
           prev.map((item) =>
             item.conversation_uid === editingConversation

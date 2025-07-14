@@ -53,7 +53,7 @@ export function RootSidebar() {
     }
     try {
       const data = await getConversationList(userUid);
-      if (data?.status && data.data) {
+      if (data?.status_code && data.data) {
         setConversationList(data.data);
       }
     } catch (err) {
