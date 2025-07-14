@@ -33,7 +33,7 @@ export function useLoadConversationAndConnect(conversationId, onMessage) {
 
         // 1) 載入歷史
         const res = await getConversationHistory(conversationId);
-        if (mounted && res.status === true && Array.isArray(res.data)) {
+        if (mounted && res.status_code === 200 && Array.isArray(res.data)) {
           onMessageRef.current({ type: "history", data: res.data });
         }
         // 2) 建立 WebSocket 連線

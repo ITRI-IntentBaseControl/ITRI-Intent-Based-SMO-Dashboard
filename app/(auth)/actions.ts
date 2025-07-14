@@ -31,8 +31,8 @@ export const login = async (
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: formData.get("email"),
-          password: formData.get("password"),
+          user_name: formData.get("email"),
+          user_password: formData.get("password"),
         }),
       }
     );
@@ -77,8 +77,8 @@ export const register = async (
   try {
     // 1. 驗證表單資料
     const validatedData = authFormSchema.parse({
-      email: formData.get("email"),
-      password: formData.get("password"),
+      user_uemail: formData.get("email"),
+      user_password: formData.get("password"),
     });
 
     // 2. 向後端發送註冊請求
