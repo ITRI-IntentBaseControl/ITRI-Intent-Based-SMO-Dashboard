@@ -34,7 +34,7 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let objectUrl: string | null = null; // 用來儲存 createObjectURL 返回的 URL
+    let objectUrl: string | null = null;
 
     const fetchAndSetImage = async () => {
       if (!conversationId || !imageId) {
@@ -47,11 +47,10 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
       setError(null);
 
       try {
-        const imageBlob = await getImage(conversationId, imageId); // 呼叫新的 getImage 函數
-
+        const imageBlob = await getImage(conversationId, imageId);
         if (imageBlob) {
-          objectUrl = URL.createObjectURL(imageBlob); // 創建臨時 URL
-          setImageUrl(objectUrl); // 更新 state
+          objectUrl = URL.createObjectURL(imageBlob);
+          setImageUrl(objectUrl);
         } else {
           setError("Failed to retrieve image data.");
         }
@@ -65,19 +64,17 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
 
     fetchAndSetImage();
 
-    // --- 清理函數 ---
     return () => {
-      // 在組件卸載時，或在依賴項改變而 useEffect 再次執行之前，會執行這個函數
       if (objectUrl) {
-        URL.revokeObjectURL(objectUrl); // 釋放記憶體
-        console.log(`Released Blob URL: ${objectUrl}`);
+        URL.revokeObjectURL(objectUrl);
+        // console.log(`Released Blob URL: ${objectUrl}`);
       }
     };
-  }, [conversationId, imageId]); // 依賴項：當這些值改變時，useEffect 會重新執行
+  }, [conversationId, imageId]);
 
   if (isLoading) {
     return (
-      <div key={i} className="p-3 mb-4 text-center">
+      <div key={i} className="p-3 mb-4 text-center text-muted-foreground">
         Loading image...
       </div>
     );
@@ -85,24 +82,24 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
 
   if (error) {
     return (
-      <div key={i} className="p-3 mb-4 text-red-500 text-center">
+      <div key={i} className="p-3 mb-4 text-center text-destructive">
         Error: {error}
       </div>
     );
   }
 
   if (!imageUrl) {
-    return null; // 或者顯示一個預設的佔位符圖片
+    return null;
   }
 
   return (
     <div
       key={i}
-      className="p-3 border rounded cursor-pointer mb-4"
-      onClick={() => setImg(imageUrl)} // 點擊時傳遞 Blob URL 給父組件的 setImg
+      className="p-3 mb-4 border border-border rounded bg-card text-card-foreground cursor-pointer hover:bg-accent transition-colors"
+      onClick={() => setImg(imageUrl)}
     >
       <img
-        src={imageUrl} // 使用 Blob URL
+        src={imageUrl}
         alt={`image-${i}`}
         className="max-w-full h-auto rounded"
       />
@@ -111,38 +108,32 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
 };
 
 export function RenderDynamicContent({ data, conversationId }: Props) {
-  // 1. 拆塊：圖片 vs. Markdown/code/table
+  // 1) 拆塊：圖片 vs. Markdown/code/table
   const normalize = (input: unknown) =>
     typeof input === "string"
       ? input.replace(/\\n/g, "\n").replace(/\\r/g, "")
       : JSON.stringify(input, null, 2);
 
-  // 1. split into Detected blocks, but first isolate back-to-back tables
   const blocks: Detected[] = data
     .flatMap((d) => {
       const raw = normalize(d.content);
 
-      // images pass through
       if (d.type === "image") {
         return [{ type: "image", content: raw }];
       }
 
-      // split raw into segments whenever a table header+divider appears
-      // lookahead for lines:
-      //   | ... | ... |
-      //   | :--- | --- |
+      // 分段處理表格區塊
       const tableSplitRegex = /(?=^\|.*\|\s*$\r?\n^\|?[:\- ]+\|.*$)/m;
       const segments = raw.split(tableSplitRegex);
 
-      // for each segment, use existing splitMarkdownBlocks
       return segments.flatMap((seg) => splitMarkdownBlocks(seg));
     })
     .filter((b) => !(b.type === "markdown" && !b.content.trim()));
-  console.log(data);
-  // 2. 圖片 Modal
+
+  // 2) 圖片 Modal
   const [img, setImg] = useState<string | null>(null);
 
-  // 3. 表格展開狀態
+  // 3) 表格展開狀態
   const [expanded, setExpanded] = useState<boolean[]>([]);
   useEffect(() => {
     setExpanded(Array(blocks.length).fill(false));
@@ -150,7 +141,7 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
   const toggle = (i: number) =>
     setExpanded((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
 
-  // 4. Inline 解析: 處理 **bold** 與純文字
+  // 4) Inline 解析: **bold**
   function parseInline(text: string): React.ReactNode[] {
     const parts = text.split(/(\*\*[^*]+\*\*)/g);
     return parts.map((seg, i) => {
@@ -160,7 +151,7 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
     });
   }
 
-  // 5. 自製 Markdown Block
+  // 5) 自製 Markdown Block（改用語義化色票以支援亮/暗主題）
   function MarkdownBlock({ content }: { content: string }) {
     const lines = content.split("\n");
     const elems: React.ReactNode[] = [];
@@ -173,11 +164,10 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
       while (stack.length > 0) {
         const list = stack.pop()!;
         const Tag = list.type;
-
         const rendered = (
           <Tag
             key={`list-${stack.length}-${Math.random()}`}
-            className="list-outside mb-2 text-zinc-200"
+            className="list-outside mb-2 text-foreground"
           >
             {list.items}
           </Tag>
@@ -191,19 +181,8 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
       levels.length = 0;
     };
 
-    let prevListLevel = -1;
-    let prevListType: "ul" | "ol" | null = null;
-
     lines.forEach((rawLine, idx) => {
       const trimmed = rawLine.trim();
-
-      if (
-        listType === "ul" &&
-        prevListType === "ol" &&
-        level === prevListLevel
-      ) {
-        level = level + 1;
-      }
 
       // === 標題 ===
       const head = trimmed.match(/^(#{1,6})\s+(.*)$/);
@@ -222,7 +201,7 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
         elems.push(
           <Tag
             key={`h-${idx}`}
-            className={`font-bold mt-4 mb-2 ${size} text-white`}
+            className={`font-bold mt-4 mb-2 ${size} text-foreground`}
           >
             {head[2]}
           </Tag>
@@ -255,7 +234,7 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
           const rendered = (
             <Tag
               key={`list-${idx}-${Math.random()}`}
-              className="list-outside list-disc pl-6 mb-2 text-stone-300"
+              className="list-outside list-disc pl-6 mb-2 text-foreground"
             >
               {list.items}
             </Tag>
@@ -276,7 +255,7 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
       flushStackToElems();
       if (trimmed) {
         elems.push(
-          <p key={`p-${idx}`} className="mb-4 text-stone-300">
+          <p key={`p-${idx}`} className="mb-4 text-foreground">
             {parseInline(trimmed)}
           </p>
         );
@@ -287,31 +266,40 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
     return <>{elems}</>;
   }
 
-  // 6. 最終 渲染
+  // 6) 最終渲染（容器使用語義化色票）
   return (
-    <div className="bg-zinc-900 rounded-lg border p-4">
+    <div className="rounded-lg  bg-card px-4 pt-4 text-card-foreground">
       {blocks.map((blk, i) => {
         switch (blk.type) {
           case "table": {
             const { columns, data: rows } = blk.content;
             const show = expanded[i] ? rows : rows.slice(0, 10);
             return (
-              <div key={i} className="border rounded p-2 overflow-x-auto mb-4">
-                <table className="w-full border-collapse text-white">
-                  <thead className="bg-slate-600">
+              <div
+                key={i}
+                className="border border-border rounded p-2 overflow-x-auto mb-4 bg-card"
+              >
+                <table className="w-full border-collapse text-foreground">
+                  <thead className="bg-muted">
                     <tr>
-                      {columns.map((c, j) => (
-                        <th key={j} className="px-2 py-1">
+                      {columns.map((c: string, j: number) => (
+                        <th
+                          key={j}
+                          className="px-2 py-1 text-left text-sm font-medium text-muted-foreground"
+                        >
                           {c}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {show.map((r, j) => (
-                      <tr key={j}>
-                        {r.map((c, k) => (
-                          <td key={k} className="border px-2 py-1">
+                    {show.map((r: string[], j: number) => (
+                      <tr key={j} className="odd:bg-muted/40">
+                        {r.map((c: string, k: number) => (
+                          <td
+                            key={k}
+                            className="border border-border px-2 py-1"
+                          >
                             {c}
                           </td>
                         ))}
@@ -322,7 +310,7 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
                 {rows.length > 10 && (
                   <button
                     onClick={() => toggle(i)}
-                    className="mt-2 px-3 py-1 border rounded text-sm bg-primary hover:bg-primary text-primary-foreground"
+                    className="mt-2 px-3 py-1 border border-border rounded text-sm bg-primary text-primary-foreground hover:opacity-90"
                   >
                     {expanded[i] ? "收起" : "顯示全部"}
                   </button>
@@ -335,13 +323,13 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
             return (
               <pre
                 key={i}
-                className="bg-[#1e1e1e] text-white p-3 rounded overflow-x-auto mb-4"
+                className="bg-muted text-foreground p-3 rounded overflow-x-auto mb-4 border border-border"
               >
                 <code>{blk.content}</code>
               </pre>
             );
 
-          case "image": {
+          case "image":
             return (
               <ConversationImageBlock
                 key={i}
@@ -351,7 +339,6 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
                 setImg={setImg}
               />
             );
-          }
 
           case "markdown":
             return <MarkdownBlock key={i} content={blk.content} />;
@@ -363,12 +350,13 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
 
       {img && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={() => setImg(null)}
         >
           <img
             src={img}
             className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-lg"
+            alt="preview"
           />
         </div>
       )}
