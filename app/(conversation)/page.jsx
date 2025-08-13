@@ -34,7 +34,7 @@ export default function HomePage() {
         alert("請先輸入訊息");
         return;
       }
-
+      
       setIsSending(true);
 
       // 1. 呼叫後端 API 建立新的對話
@@ -59,13 +59,13 @@ export default function HomePage() {
     } catch (error) {
       console.error("Create conversation error:", error);
       alert("建立對話失敗，請稍後再試。");
-    } finally {
-      setIsSending(false);
+      setIsSending(false);  
     }
   };
 
   // 按 Enter (非 Shift+Enter) 送出
   const handleKeyDown = (e) => {
+    if (isSending) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
