@@ -119,10 +119,38 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
 
   // 3) Inline 解析: **bold**
   function parseInline(text: string): React.ReactNode[] {
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    const regex = /(\*\*[^*]+\*\*|\[[^\]]+\]\s*\([^)]+\))/g;
+    const parts = text.split(regex);
     return parts.map((seg, i) => {
-      const m = seg.match(/^\*\*(.+)\*\*$/);
-      if (m) return <strong key={i}>{m[1]}</strong>;
+      if (!seg) return null;
+
+      // A. 檢查是否為粗體
+      const mBold = seg.match(/^\*\*(.+)\*\*$/);
+      if (mBold) {
+        return <strong key={i}>{mBold[1]}</strong>;
+      }
+
+      // B. 檢查是否為超連結
+      const mLink = seg.match(/^\[([^\]]+)\]\s*\(([^)]+)\)$/);
+      if (mLink) {
+        const linkText = mLink[1];
+        const linkUrl = mLink[2];
+        return (
+          <a
+            key={i}
+            href={linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-3 py-1 my-1 mr-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 text-sm hover:bg-blue-500/20 hover:text-blue-300 transition-colors no-underline break-all"
+            onClick={(e) => e.stopPropagation()} // 防止觸發父層點擊事件（若有）
+          >
+            <span className="text-xs opacity-70">🔗</span>
+            <span>{linkText}</span>
+          </a>
+        );
+      }
+
+      // C. 普通文字
       return <React.Fragment key={i}>{seg}</React.Fragment>;
     });
   }
