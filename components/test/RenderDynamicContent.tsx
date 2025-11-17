@@ -107,6 +107,40 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
   );
 };
 
+const IframeRendererImpl: React.FC<{htmlContent: string; partKey: string;}> = ({ htmlContent, partKey }) => {
+  // 1. 用一個寬鬆的 Regex 找到 <iframe> 標籤及其所有屬性
+  const iframeTagMatch = htmlContent.match(/<iframe\s+([^>]*)>/);
+  if (!iframeTagMatch || !iframeTagMatch[1]) {
+    console.error("Could not parse iframe content:", htmlContent);
+    return (
+      <div className="text-destructive mb-4">
+        Error: Could not parse &lt;history&gt; iframe content.
+      </div>
+    );
+  }
+
+  const attrsString = iframeTagMatch[1];
+  const attrRegex = /(\S+)=["']([^"']*)["']/g;
+  const props: { [key: string]: string } = {};
+  let match;
+
+  while ((match = attrRegex.exec(attrsString)) !== null) {
+    props[match[1]] = match[2];
+  }
+
+  return (
+    <iframe
+      key={partKey} // 使用 partKey 作為 key
+      src={props.src}
+      width={props.width}
+      height={props.height}
+      frameBorder={props.frameborder}
+      className="mb-4"
+    />
+  );
+};
+const IframeRenderer = React.memo(IframeRendererImpl);
+
 export function RenderDynamicContent({ data, conversationId }: Props) {
   // 1) 圖片 Modal 狀態
   const [img, setImg] = useState<string | null>(null);
@@ -342,46 +376,7 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
     );
   };
 
-  // 6) Iframe 解析器
-  const IframeRenderer: React.FC<{ htmlContent: string; partKey: string }> = ({
-    htmlContent,
-    partKey,
-  }) => {
-    // 1. 用一個寬鬆的 Regex 找到 <iframe> 標籤及其所有屬性
-    const iframeTagMatch = htmlContent.match(/<iframe\s+([^>]*)>/);
-    if (!iframeTagMatch || !iframeTagMatch[1]) {
-      console.error("Could not parse iframe content:", htmlContent);
-      return (
-        <div className="text-destructive mb-4">
-          Error: Could not parse &lt;history&gt; iframe content.
-        </div>
-      );
-    }
-
-    const attrsString = iframeTagMatch[1]; // 2. Regex 來捕獲所有 key="value" 形式的屬性
-    const attrRegex = /(\S+)=["']([^"']*)["']/g;
-    const props: { [key: string]: string } = {};
-    let match; // 3. 將所有 HTML 屬性提取到一個 props 物件中
-
-    while ((match = attrRegex.exec(attrsString)) !== null) {
-      // match[1] 是 key (例如 'src', 'width', 'frameborder')
-      // match[2] 是 value (例如 'http://...', '450', '0')
-      props[match[1]] = match[2];
-    } // 4. 建立 React 元素，並進行屬性轉換
-
-    return (
-      <iframe
-        key={partKey}
-        src={props.src}
-        width={props.width}
-        height={props.height}
-        frameBorder={props.frameborder}
-        className="mb-4"
-      />
-    );
-  };
-
-  // 7) 內容區塊渲染器
+  // 6) 內容區塊渲染器
   const RenderContentChunk: React.FC<{
     content: string;
     chunkKey: string;
@@ -471,14 +466,14 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
     );
   };
 
-  // 8) 標籤解析 Regex
+  // 7) 標籤解析 Regex
   // 匹配兩種標籤：
   // 1. 閉合標籤 (group 1, 2, 3): <tag>content</tag>
   // 2. 前綴標籤 (group 4, 5): [tag] 或 **[tag]** (可選的 **)
   const tagRegex =
     /(<(brief_summary|detailed_summary|history)>(.*?)<\/\2>)|((?:\*\*)?\[(思考|給使用者的回覆)\](?:\*\*)?)/gs;
 
-  // 9) 最終渲染邏輯 (不變)
+  // 8) 最終渲染邏輯
   return (
     <div className="rounded-lg bg-card px-4 pt-4 text-card-foreground">
       {data.map((d, i) => {
