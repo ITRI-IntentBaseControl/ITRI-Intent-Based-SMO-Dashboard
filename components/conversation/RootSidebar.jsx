@@ -1,9 +1,9 @@
 // components/sidebar/RootSidebar.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { PlusIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,74 +23,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Trash2, Edit3, LogOut } from "lucide-react";
 
-import {
-  getConversationList,
-  deleteConversation,
-} from "@/app/service/conversation/ExternalService/apiService";
-import { useRenameConversation } from "@/app/hooks/conversation/useRenameConversation";
+import { useConversationManager } from "@/app/hooks/conversation/useConversationManager";
 
 export function RootSidebar() {
   const router = useRouter();
-  const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
-  const [conversationList, setConversationList] = useState([]);
 
   const {
+    conversationList,
+    handleDelete,
     editingConversation,
     editValue,
     setEditValue,
     inputRef,
     startEditing,
     handleRename,
-  } = useRenameConversation(conversationList, setConversationList);
-
-  // fetch list
-  const fetchConversations = async () => {
-    const userUid = localStorage.getItem("user_uid");
-    if (!userUid) {
-      router.push("/signin");
-      return;
-    }
-    try {
-      const data = await getConversationList(userUid);
-      if (data?.status_code && data.data) {
-        setConversationList(data.data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    fetchConversations();
-  }, []);
-
-  useEffect(() => {
-    const onUpdate = () => fetchConversations();
-    window.addEventListener("updateConversationList", onUpdate);
-    return () => window.removeEventListener("updateConversationList", onUpdate);
-  }, []);
-
-  // delete conversation
-  const handleDelete = async (conversationUid) => {
-    try {
-      const res = await deleteConversation(conversationUid);
-        if (res?.status_code === 200) {
-        setConversationList((prev) =>
-          prev.filter((c) => c.conversation_uid !== conversationUid)
-        );
-        if (pathname === `/conversation/${conversationUid}`) {
-          router.push("/");
-        }
-        window.dispatchEvent(new Event("updateConversationList"));
-        setOpenMobile(false);
-      } else {
-        console.error("刪除對話失敗", res);
-      }
-    } catch (err) {
-      console.error("刪除對話出錯", err);
-    }
-  };
+  } = useConversationManager();
 
   // logout handler
   const handleLogout = () => {
