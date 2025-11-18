@@ -1,8 +1,6 @@
 import NextAuth, { type User, type Session } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-import { authConfig } from "./auth.config";
-
 interface ExtendedSession extends Session {
   user: User;
 }
@@ -13,7 +11,6 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
-  ...authConfig,
   providers: [
     Credentials({
       credentials: {},
