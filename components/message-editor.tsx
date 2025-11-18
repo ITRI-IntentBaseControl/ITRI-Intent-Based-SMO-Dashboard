@@ -1,21 +1,20 @@
-'use client';
+"use client";
 
-import { ChatRequestOptions, Message } from 'ai';
-import { Button } from './ui/button';
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
-import { Textarea } from './ui/textarea';
-import { deleteTrailingMessages } from '@/app/(chat)/actions';
-import { toast } from 'sonner';
-import { useUserMessageId } from '@/hooks/use-user-message-id';
+import { ChatRequestOptions, Message } from "ai";
+import { Button } from "./ui/button";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { Textarea } from "./ui/textarea";
+import { toast } from "sonner";
+import { useUserMessageId } from "@/hooks/use-user-message-id";
 
 export type MessageEditorProps = {
   message: Message;
-  setMode: Dispatch<SetStateAction<'view' | 'edit'>>;
+  setMode: Dispatch<SetStateAction<"view" | "edit">>;
   setMessages: (
-    messages: Message[] | ((messages: Message[]) => Message[]),
+    messages: Message[] | ((messages: Message[]) => Message[])
   ) => void;
   reload: (
-    chatRequestOptions?: ChatRequestOptions,
+    chatRequestOptions?: ChatRequestOptions
   ) => Promise<string | null | undefined>;
 };
 
@@ -39,8 +38,10 @@ export function MessageEditor({
 
   const adjustHeight = () => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${
+        textareaRef.current.scrollHeight + 2
+      }px`;
     }
   };
 
@@ -63,7 +64,7 @@ export function MessageEditor({
           variant="outline"
           className="h-fit py-2 px-3"
           onClick={() => {
-            setMode('view');
+            setMode("view");
           }}
         >
           Cancel
@@ -77,14 +78,13 @@ export function MessageEditor({
             const messageId = userMessageIdFromServer ?? message.id;
 
             if (!messageId) {
-              toast.error('Something went wrong, please try again!');
+              toast.error("Something went wrong, please try again!");
               setIsSubmitting(false);
               return;
             }
 
-            await deleteTrailingMessages({
-              id: messageId,
-            });
+            // deleteTrailingMessages is no longer available
+            // Use backend API instead
 
             setMessages((messages) => {
               const index = messages.findIndex((m) => m.id === message.id);
@@ -101,11 +101,11 @@ export function MessageEditor({
               return messages;
             });
 
-            setMode('view');
+            setMode("view");
             reload();
           }}
         >
-          {isSubmitting ? 'Sending...' : 'Send'}
+          {isSubmitting ? "Sending..." : "Send"}
         </Button>
       </div>
     </div>

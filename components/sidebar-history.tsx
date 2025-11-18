@@ -59,12 +59,7 @@ type GroupedChats = {
   older: Chat[];
 };
 
-const PureChatItem = ({
-  chat,
-  isActive,
-  onRequestDelete,
-  setOpenMobile,
-}) => {
+const PureChatItem = ({ chat, isActive, onRequestDelete, setOpenMobile }) => {
   const { visibilityType, setVisibilityType } = useChatVisibility({
     chatId: chat.id,
     initialVisibility: chat.visibility,
@@ -105,9 +100,7 @@ const PureChatItem = ({
                     <LockIcon size={12} />
                     <span>Private</span>
                   </div>
-                  {visibilityType === "private" && (
-                    <CheckCircleFillIcon />
-                  )}
+                  {visibilityType === "private" && <CheckCircleFillIcon />}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setVisibilityType("public")}
@@ -147,10 +140,11 @@ export function SidebarHistory({ user }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { data: history = [], isLoading, mutate } = useSWR(
-    user ? "/api/history" : null,
-    fetcher
-  );
+  const {
+    data: history = [],
+    isLoading,
+    mutate,
+  } = useSWR(user ? "/api/history" : null, fetcher);
 
   useEffect(() => {
     mutate();
@@ -160,17 +154,9 @@ export function SidebarHistory({ user }) {
   const [open, setOpen] = useState(false);
 
   const handleDelete = async () => {
-    const promise = fetch(`/api/chat?id=${toDeleteId}`, { method: "DELETE" });
-    toast.promise(promise, {
-      loading: "Deleting chat...",
-      success: () => {
-        mutate((chats) => chats?.filter((c) => c.id !== toDeleteId) ?? []);
-        return "Chat deleted";
-      },
-      error: "Failed to delete chat",
-    });
+    // API chat endpoint is no longer available
+    toast.error("Chat deletion is not available");
     setOpen(false);
-    if (toDeleteId === id) router.push("/");
   };
 
   const groupChatsByDate = (chats) => {
@@ -248,9 +234,7 @@ export function SidebarHistory({ user }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
