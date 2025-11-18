@@ -1,12 +1,6 @@
 // 檔案路徑: /InternalService/messageDecorator.js
 "use client";
 
-// 定義從後端的 event_type -> 前端角色
-const ROLE_MAPPING = {
-  user_message: "user",
-  llm_message: "llm",
-};
-
 /**
  * 將 WebSocket 收到的 rawData(JSON字串) 解析、轉成前端能用的 { role, content }
  * @param {string} rawData
