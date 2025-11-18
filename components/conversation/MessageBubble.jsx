@@ -11,7 +11,6 @@ import { RenderDynamicContent } from "../test/RenderDynamicContent";
  */
 export function MessageBubble({
   msg,
-  isTyping = false,
   onSelectOption,
   conversationId,
 }) {
