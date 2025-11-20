@@ -1,21 +1,14 @@
 "use client";
 
 import React from "react";
-import { useWindowSize } from "usehooks-ts";
-import { useSidebar } from "@/components/ui/sidebar";
-
 import { ConversationHeader } from "./ConversationHeader";
 import { ConversationInput } from "./ConversationInput";
 import { ConversationMessages } from "./ConversationMessages";
-import { StatusColumn } from "@/components/conversation/StatusColumn";
 
 // 從自訂 hook 匯入
 import { useConversation } from "../../app/hooks/conversation/useConversation";
 
 export default function ConversationClient({ conversationId }) {
-  const { width } = useWindowSize();
-  const { open } = useSidebar();
-
   const {
     isLoading,
     inputValue,
@@ -47,9 +40,6 @@ export default function ConversationClient({ conversationId }) {
             />
           </div>
         </div>
-
-        {/* 右側狀態欄 */}
-        {open && <StatusColumn side="right" />}
       </div>
 
       {/* 輸入框 區塊 (置中對齊同 mx-auto max-w-3xl) */}

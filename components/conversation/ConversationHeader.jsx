@@ -11,8 +11,6 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 
-import { useWindowSize } from "usehooks-ts";
-import { useSidebar } from "@/components/ui/sidebar";
 import { useRouter } from "next/navigation";
 import { Sun, Moon } from "lucide-react";
 export function ConversationHeader() {

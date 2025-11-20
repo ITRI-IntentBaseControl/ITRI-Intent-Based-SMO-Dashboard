@@ -30,7 +30,6 @@
     "next.config.js",
     "app/service/signin/ExternalService/siginService.jsx",
     "app/(member)/signin/page.jsx",
-    "app/(conversation)/components/chat/icons.jsx",
     "components/conversation/ConversationHeader.jsx",
     "components/conversation/ConversationInput.jsx",
     "components/conversation/ConversationMessages.jsx",
