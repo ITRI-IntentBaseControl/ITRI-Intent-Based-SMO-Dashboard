@@ -39,7 +39,7 @@
     "app/(conversation)/page.jsx",
     "app/(conversation)/conversation/[conversation_uid]/page.jsx",
     "app/(conversation)/layout.jsx",
-    "components/test/RenderDynamicContent.tsx"
+    "components/conversation/RenderDynamicContent.tsxtent.tsx"
   ],
   "exclude": ["node_modules"]
 }

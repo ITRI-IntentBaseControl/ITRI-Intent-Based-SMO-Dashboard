@@ -63,7 +63,7 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
     };
 
     fetchAndSetImage();
-    
+
     return () => {
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
@@ -107,7 +107,10 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
   );
 };
 
-const IframeRendererImpl: React.FC<{htmlContent: string; partKey: string;}> = ({ htmlContent, partKey }) => {
+const IframeRendererImpl: React.FC<{
+  htmlContent: string;
+  partKey: string;
+}> = ({ htmlContent, partKey }) => {
   // 1. 用一個寬鬆的 Regex 找到 <iframe> 標籤及其所有屬性
   const iframeTagMatch = htmlContent.match(/<iframe\s+([^>]*)>/);
   if (!iframeTagMatch || !iframeTagMatch[1]) {
@@ -197,7 +200,7 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
     // 巢狀清單堆疊
     const stack: { type: "ul" | "ol"; items: React.ReactNode[] }[] = [];
     const levels: { level: number; type: "ul" | "ol" }[] = [];
-    
+
     let inCodeBlock = false;
     let codeLines: string[] = [];
     let codeLang = "";
@@ -246,7 +249,7 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
       const trimmed = rawLine.trim();
       // === 處理 Code Blocks ===
       const codeMatch = trimmed.match(/^```(\w*)$/); // 匹配 ``` 或 ```lang
-      
+
       if (codeMatch && !inCodeBlock) {
         // 偵測到 ``` 開頭
         flushStackToElems(); // 先清空所有待辦的列表
@@ -618,4 +621,4 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
       )}
     </div>
   );
-} 
+}
