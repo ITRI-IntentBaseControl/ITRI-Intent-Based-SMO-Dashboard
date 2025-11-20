@@ -1,0 +1,63 @@
+# my-chatbot/frontend/Dockerfile
+
+# --- 1. 基本階段 (共用) ---
+# 負責安裝所有依賴
+FROM node:20.18.0 AS base
+WORKDIR /app
+COPY package*.json ./
+RUN npm install -f
+
+# --- 2. 生產 - 建置階段 (Builder) ---
+# 只有 'run-prod.sh' 會用到這個階段
+FROM base AS builder
+COPY . .
+
+# 接收所有 'next.config.js' 中 'env:' 裡定義的建置參數
+ARG PROTOCAL
+ARG HOST
+ARG API_PORT
+ARG API_ROOT
+ARG API_VERSION
+
+ENV PROTOCAL=$PROTOCAL
+ENV HOST=$HOST
+ENV API_PORT=$API_PORT
+ENV API_ROOT=$API_ROOT
+ENV API_VERSION=$API_VERSION
+
+# 執行建置
+RUN npm run build
+
+# --- 3. 生產 - 運行階段 (Production) ---
+FROM node:20.18.0 AS production
+WORKDIR /app
+
+# 只安裝 'production' 依賴，體積更小
+COPY package*.json ./
+RUN npm install --production -f
+
+# 接收 PORT 參數
+ARG PORT=3000
+ENV PORT=$PORT
+EXPOSE $PORT
+
+# 從 'builder' 階段複製建置好的檔案
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.ts ./next.config.ts
+
+# 啟動 Production 伺服器
+CMD ["npm", "run", "start"]
+
+# --- 4. 開發階段 (Development) ---
+# 'run-dev.sh' 的最終目標
+FROM base AS development
+COPY . .
+
+# 接收 PORT 參數
+ARG PORT=3000
+ENV PORT=$PORT
+EXPOSE $PORT
+
+# 啟動開發伺服器
+CMD ["npm", "run", "dev"]
