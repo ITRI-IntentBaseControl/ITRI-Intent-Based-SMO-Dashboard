@@ -52,7 +52,7 @@ export function useConversation(conversationId) {
             : "";
 
         if (eventType === "0" || eventType.includes("0")) {
-          console.log("收到後端錯誤:", message.text_content);
+          // console.log("收到後端錯誤:", message.text_content);
 
           // 1. 建立錯誤訊息物件，加上 isError: true 標記
           const errorMessage = {
@@ -72,13 +72,13 @@ export function useConversation(conversationId) {
           setIsSending(false);
         } else if (eventType.includes("2")) {
           // 串流訊息
-          console.log("收到訊息更新:", message.text_content);
+          // console.log("收到訊息更新:", message.text_content);
           setHasStreamStarted(true);
           setIsSending(true);
           setChatMessages((prev) => [...prev, message]);
         } else if (eventType.includes("3")) {
           // 串流訊息結束
-          console.log("結束訊息:", message.text_content);
+          // console.log("結束訊息:", message.text_content);
           if (!hasStreamStarted) {
             // 沒有收到 event_type === 2，直接收到 3，表示後端沒有接收到錯誤，但dify出錯
             const errorMessage = {
