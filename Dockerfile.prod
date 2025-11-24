@@ -48,16 +48,3 @@ COPY --from=builder /app/next.config.ts ./next.config.ts
 
 # 啟動 Production 伺服器
 CMD ["npm", "run", "start"]
-
-# --- 4. 開發階段 (Development) ---
-# 'run-dev.sh' 的最終目標
-FROM base AS development
-COPY . .
-
-# 接收 PORT 參數
-ARG PORT=3000
-ENV PORT=$PORT
-EXPOSE $PORT
-
-# 啟動開發伺服器
-CMD ["npm", "run", "dev"]
