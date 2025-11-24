@@ -37,6 +37,7 @@ export default function ConversationClient({ conversationId }) {
               typingMessage={typingMessage}
               onSelectOption={handleOptionSelect}
               conversationId={conversationId}
+              isSending={isSending}
             />
           </div>
         </div>

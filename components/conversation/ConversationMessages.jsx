@@ -8,6 +8,7 @@ export function ConversationMessages({
   chatMessages,
   onSelectOption,
   conversationId,
+  isSending,
 }) {
   const containerRef = useRef(null);
   const bottomRef = useRef(null);
@@ -15,11 +16,7 @@ export function ConversationMessages({
   // 只要 chatMessages 陣列長度改變，就滾到底
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages.length]);
-
-  // 判斷最後一筆是否為 user
-  const lastMsg = chatMessages[chatMessages.length - 1];
-  const shouldShowThinking = lastMsg?.role === "user";
+  }, [chatMessages.length, isSending]);
 
   return (
     <div
@@ -38,7 +35,7 @@ export function ConversationMessages({
         ))}
 
         {/* 如果最後一筆是 user，就顯示一個助理打字中的提示 */}
-        {shouldShowThinking && (
+        {isSending && (
           <MessageBubble
             key="thinking"
             msg={{ role: "llm", content: "Thinking…", text_content: [] }}
