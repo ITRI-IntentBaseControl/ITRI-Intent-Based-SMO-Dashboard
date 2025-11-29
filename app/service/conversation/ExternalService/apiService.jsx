@@ -77,13 +77,19 @@ export async function getConversationHistory(conversationUid) {
 
 /**
  * 建立對話
+ * @param {string} user_uid - 使用者 UID
+ * @param {string} agent_uid - Agent UID (可選)
  * @returns { conversationId, topic }
  */
-export async function createConversation(user_uid) {
+export async function createConversation(user_uid, agent_uid = null) {
   // 對後端 "create-conversation" 端點發送 POST 請求
+  const payload = { user_uid };
+  if (agent_uid) {
+    payload.agent_uid = agent_uid;
+  }
   const response = await postAPI(
     "conversation_mgt/ConversationManager/create_conversation",
-    { user_uid }
+    payload
   );
   return response.data;
 }
@@ -93,12 +99,12 @@ export async function getImage(conversationUid, imageUid) {
   try {
     // 發送 POST 請求，並要求 responseType 為 'blob'
     const response = await postAPI(
-      "conversation_mgt/ImageManager/get_image", 
+      "conversation_mgt/ImageManager/get_image",
       {
         conversation_uid: conversationUid,
         image_uid: imageUid,
-      }, 
-      { responseType: 'blob' }
+      },
+      { responseType: "blob" }
     );
 
     // 檢查響應是否為錯誤實例
@@ -115,7 +121,10 @@ export async function getImage(conversationUid, imageUid) {
         // 嘗試將非 Blob 數據讀取為文本，然後解析為 JSON 錯誤訊息
         const errorText = await new Response(response.data).text();
         const errorJson = JSON.parse(errorText);
-        console.error("getImage API Error (non-blob response):", errorJson.error || "Unknown error");
+        console.error(
+          "getImage API Error (non-blob response):",
+          errorJson.error || "Unknown error"
+        );
         return null;
       } catch (parseError) {
         // 如果無法解析為 JSON，則直接報錯

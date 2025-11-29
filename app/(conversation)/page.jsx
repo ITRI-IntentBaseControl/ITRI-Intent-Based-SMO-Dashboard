@@ -1,15 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createConversation } from "../service/conversation/ExternalService/apiService";
 import { Button } from "@/components/ui/button";
 import { ConversationHeader } from "@/components/conversation/ConversationHeader";
 
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [userMessage, setUserMessage] = useState("");
   const [userUid, setUserUid] = useState(null);
+  const [agentUid, setAgentUid] = useState(null);
   const [isSending, setIsSending] = useState(false);
 
   // 在元件載入時從 localStorage 抓取 user_uid
@@ -17,7 +19,29 @@ export default function HomePage() {
     const storedUserUid =
       typeof window !== "undefined" ? localStorage.getItem("user_uid") : null;
     setUserUid(storedUserUid);
-  }, []);
+
+    // 從 URL 參數取得 agent_uid 和 msg
+    const urlAgentUid = searchParams.get("agent_uid");
+    const urlMsg = searchParams.get("msg");
+
+    if (urlAgentUid) {
+      setAgentUid(urlAgentUid);
+    }
+    if (urlMsg) {
+      setUserMessage(urlMsg);
+    }
+  }, [searchParams]);
+
+  // 自動送出：當有 agent_uid 和訊息時
+  useEffect(() => {
+    if (userUid && agentUid && userMessage && !isSending) {
+      // 延遲一點點確保狀態都更新完成
+      const timer = setTimeout(() => {
+        handleSend();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [userUid, agentUid, userMessage]);
 
   // 當使用者輸入訊息後
   const handleSend = async () => {
@@ -34,11 +58,11 @@ export default function HomePage() {
         alert("請先輸入訊息");
         return;
       }
-      
+
       setIsSending(true);
 
-      // 1. 呼叫後端 API 建立新的對話
-      const data = await createConversation(userUid);
+      // 1. 呼叫後端 API 建立新的對話（帶上 agent_uid 如果有）
+      const data = await createConversation(userUid, agentUid);
 
       // 2. 從後端回傳資料中取得 conversation_uid
       const conversation_uid = data?.data?.conversation_uid;
@@ -59,7 +83,7 @@ export default function HomePage() {
     } catch (error) {
       console.error("Create conversation error:", error);
       alert("建立對話失敗，請稍後再試。");
-      setIsSending(false);  
+      setIsSending(false);
     }
   };
 
