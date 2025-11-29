@@ -63,48 +63,11 @@ const downloadPDF = async (
   return await postAPI(endpoint, data, { isDownload: true });
 };
 
-// 具體的 API 請求
-// const login = async (data: object): Promise<AxiosResponse | Error> => {
-//   localStorage.setItem("isLoggedIn", "true");
-//   localStorage.setItem("accountname", "test");
-//   const endpoint = APIKEYS.LOGIN_ACCOUNT;
-//   return await postAPI(endpoint, data);
-// };
-
-// const signup = async (data: object): Promise<AxiosResponse | Error> => {
-//   const endpoint = "AccountValidator/signup";
-//   return await postAPI(endpoint, data);
-// };
-
-// const testAPI = async (
-//   endpoint: string,
-//   data: object
-// ): Promise<AxiosResponse | Error> => {
-//   const TEST_API_BASE_URL = process.env.NEXT_PUBLIC_TEST_API;
-//   const url = `${TEST_API_BASE_URL}/${endpoint}`;
-//   try {
-//     const response = await axios.post(url, data);
-//     return handleApiResponse(response);
-//   } catch (error) {
-//     handleApiError(error);
-//     return error;
-//   }
-// };
-
 // 處理 API 回應
 const handleApiResponse = (response: AxiosResponse): AxiosResponse | void => {
   switch (response.status) {
     case ApiResponseStatus.SUCCESS:
       return response;
-    // case ApiResponseStatus.CLIENT_ERROR:
-    //   console.error("Client Error:", response.data.detail);
-    //   break;
-    // case ApiResponseStatus.METHOD_NOT_ALLOWED:
-    //   console.error("Method Not Allowed");
-    //   break;
-    // case ApiResponseStatus.INTERNAL_SERVER_ERROR:
-    //   console.error("Internal Server Error:", response.data.detail);
-    //   break;
     default:
       return response;
   }

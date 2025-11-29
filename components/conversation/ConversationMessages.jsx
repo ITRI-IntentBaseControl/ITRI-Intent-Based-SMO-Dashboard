@@ -42,7 +42,6 @@ export function ConversationMessages({
           <MessageBubble
             key="thinking"
             msg={{ role: "llm", content: "Thinking…", text_content: [] }}
-            isTyping
             onSelectOption={onSelectOption}
             conversationId={conversationId}
           />

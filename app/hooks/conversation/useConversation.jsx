@@ -1,11 +1,10 @@
 // useConversation.js (主 Hook)
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useState } from "react";
 import {
   inboundMessageDecorator,
   outboundMessageDecorator,
 } from "../../service/conversation/InternalService/messageDecorator";
 import { useLoadConversationAndConnect } from "./useLoadConversationAndConnect";
-import { useTypingEffect } from "./useTypingQueue";
 
 export function useConversation(conversationId) {
   const [chatMessages, setChatMessages] = useState([]);
@@ -59,8 +58,6 @@ export function useConversation(conversationId) {
   // 3) 最後呼叫 useLoadConversationAndConnect
   const { isLoading, isWsConnected, wsServiceRef } =
     useLoadConversationAndConnect(conversationId, handleOnMessage);
-
-  // ---- 其餘程式碼不變 ----
 
   function handleAutoSend() {
     if (didAutoSend) return;

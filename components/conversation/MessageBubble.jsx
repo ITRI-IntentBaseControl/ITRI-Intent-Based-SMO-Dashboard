@@ -2,19 +2,14 @@
 import React from "react";
 import { SparklesIcon } from "@/components/icons";
 import { motion } from "framer-motion";
-import { RenderDynamicContent } from "../test/RenderDynamicContent";
+import { RenderDynamicContent } from "./RenderDynamicContent";
 
 /**
  * 顏色改為使用 shadcn/tailwind 的語義化 token，
  * 例如：bg-primary / text-primary-foreground / bg-muted / text-foreground / border-border。
  * 這些會跟隨 next-themes 的黑/白主題自動切換，不再硬寫 bg-gray-300 / bg-zinc-900。
  */
-export function MessageBubble({
-  msg,
-  isTyping = false,
-  onSelectOption,
-  conversationId,
-}) {
+export function MessageBubble({ msg, onSelectOption, conversationId }) {
   const { role, text_content } = msg;
   const isUser = role === "user";
   const isAssistant = role === "llm";
