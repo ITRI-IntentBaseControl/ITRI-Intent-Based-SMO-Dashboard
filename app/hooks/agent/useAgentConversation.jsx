@@ -15,32 +15,40 @@ export function useAgentConversation(agentUid) {
   const [error, setError] = useState(null);
 
   // 獲取特定 agent 的對話列表
-  const fetchConversations = useCallback(async () => {
-    const userUid = localStorage.getItem("user_uid");
-    if (!userUid) {
-      router.push("/signin");
-      return;
-    }
-
-    if (!agentUid) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const data = await getAgentConversationList(userUid, agentUid);
-      if (data?.status_code === 200 && data.data) {
-        setConversations(data.data);
-      } else {
-        setError(data?.message || "Failed to fetch conversations");
+  // silent: 靜默更新，不顯示 loading 狀態（用於背景刷新）
+  const fetchConversations = useCallback(
+    async (silent = false) => {
+      const userUid = localStorage.getItem("user_uid");
+      if (!userUid) {
+        router.push("/signin");
+        return;
       }
-    } catch (err) {
-      console.error("[useAgentConversation] Error:", err);
-      setError("Failed to fetch conversations");
-    } finally {
-      setLoading(false);
-    }
-  }, [agentUid, router]);
+
+      if (!agentUid) return;
+
+      if (!silent) {
+        setLoading(true);
+      }
+      setError(null);
+
+      try {
+        const data = await getAgentConversationList(userUid, agentUid);
+        if (data?.status_code === 200 && data.data) {
+          setConversations(data.data);
+        } else {
+          setError(data?.message || "Failed to fetch conversations");
+        }
+      } catch (err) {
+        console.error("[useAgentConversation] Error:", err);
+        setError("Failed to fetch conversations");
+      } finally {
+        if (!silent) {
+          setLoading(false);
+        }
+      }
+    },
+    [agentUid, router]
+  );
 
   // 創建新對話
   const createConversation = useCallback(async () => {

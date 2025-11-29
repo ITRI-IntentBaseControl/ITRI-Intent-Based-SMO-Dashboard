@@ -101,6 +101,8 @@ export function useConversationManager() {
               : item
           )
         );
+        // 重新命名後廣播事件，讓其他頁面（例如 Agent 頁面）可以重新載入對話列表
+        window.dispatchEvent(new Event("updateConversationList"));
       } else {
         console.error("Rename conversation failed:", data);
       }
