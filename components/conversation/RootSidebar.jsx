@@ -20,8 +20,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Edit3, LogOut, Users } from "lucide-react";
-import { PlusIcon } from "@/components/icons";
+import { MoreVertical, Trash2, Edit3, LogOut, Download } from "lucide-react";
+import { ExportConversationDialog } from "@/components/conversation/ExportConversationDialog";
 
 import { useConversationManager } from "@/app/hooks/conversation/useConversationManager";
 import { usePathname } from "next/navigation";
@@ -48,41 +48,15 @@ export function RootSidebar() {
     router.push("/signin");
   };
 
-  // 新增：控制新對話輸入框顯示與內容
-  const [showNewConversationInput, setShowNewConversationInput] =
-    React.useState(false);
-  const [newConversationMsg, setNewConversationMsg] = React.useState("");
-  const [isCreating, setIsCreating] = React.useState(false);
+  // 匯出對話相關狀態
+  const [exportDialogOpen, setExportDialogOpen] = React.useState(false);
+  const [exportingConversation, setExportingConversation] =
+    React.useState(null);
 
-  // 新對話送出
-  const handleCreateConversation = async () => {
-    if (!newConversationMsg.trim()) return;
-    setIsCreating(true);
-    try {
-      const userUid = localStorage.getItem("user_uid");
-      if (!userUid) {
-        alert("請先登入");
-        setIsCreating(false);
-        return;
-      }
-      // 呼叫 API 建立新對話
-      const { createConversation } = await import(
-        "@/app/service/conversation/ExternalService/apiService"
-      );
-      const data = await createConversation(userUid);
-      const conversation_uid = data?.data?.conversation_uid;
-      // 暫存訊息
-      localStorage.setItem(`init_msg_${conversation_uid}`, newConversationMsg);
-      window.dispatchEvent(new Event("updateConversationList"));
-      setShowNewConversationInput(false);
-      setNewConversationMsg("");
-      setIsCreating(false);
-      // 跳轉
-      router.push(`/conversation/${conversation_uid}`);
-    } catch (err) {
-      alert("建立對話失敗，請稍後再試。");
-      setIsCreating(false);
-    }
+  // 開啟匯出對話框
+  const openExportDialog = (conversation) => {
+    setExportingConversation(conversation);
+    setExportDialogOpen(true);
   };
 
   return (
@@ -97,20 +71,6 @@ export function RootSidebar() {
             >
               ITRI Intent-Based Chatbot
             </Link>
-          </div>
-          {/* Agent Select Button */}
-          <div className="px-2 py-2">
-            <Button
-              variant="outline"
-              className="w-full flex items-center gap-2 justify-start"
-              onClick={() => {
-                setOpenMobile(false);
-                router.push("/agent");
-              }}
-            >
-              <Users className="h-4 w-4" />
-              Agent Select
-            </Button>
           </div>
         </SidebarMenu>
       </SidebarHeader>
@@ -169,6 +129,12 @@ export function RootSidebar() {
                         <Edit3 className="h-4 w-4" /> 重新命名
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        onClick={() => openExportDialog(c)}
+                        className="cursor-pointer flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" /> 匯出
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onClick={() => handleDelete(c.conversation_uid)}
                         className="cursor-pointer text-destructive flex items-center gap-2"
                       >
@@ -192,6 +158,13 @@ export function RootSidebar() {
           <LogOut className="h-4 w-4" /> 登出
         </Button>
       </SidebarFooter>
+
+      {/* 匯出對話對話框 */}
+      <ExportConversationDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        conversation={exportingConversation}
+      />
     </Sidebar>
   );
 }

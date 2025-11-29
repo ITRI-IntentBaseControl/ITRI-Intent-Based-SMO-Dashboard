@@ -28,23 +28,18 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useAgentConversation } from "@/app/hooks/agent/useAgentConversation";
+import { createConversation } from "@/app/service/conversation/ExternalService/apiService";
 
 export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
   const router = useRouter();
   const [showConversations, setShowConversations] = useState(false);
   const [showNewConvInput, setShowNewConvInput] = useState(false);
   const [newConvMsg, setNewConvMsg] = useState("");
-  const [isCreatingConv, setIsCreatingConv] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const {
-    conversations,
-    loading,
-    creating,
-    error,
-    fetchConversations,
-    createConversation,
-  } = useAgentConversation(agent.agent_uid);
+  const [isCreatingConv, setIsCreatingConv] = useState(false);
+  const { conversations, loading, error, fetchConversations } =
+    useAgentConversation(agent.agent_uid);
 
   // 當展開時獲取對話列表
   useEffect(() => {
@@ -53,33 +48,63 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
     }
   }, [showConversations, conversations.length, fetchConversations]);
 
-  // 監聽全域對話列表更新事件（例如在側邊欄刪除或新增對話後）
+  // 監聯全域對話列表更新事件（例如在側邊欄刪除或新增對話後）
   useEffect(() => {
     const EVENT_NAME = "updateConversationList";
     const handler = () => {
       // 只有展開狀態下才重新抓，避免一次更新觸發所有 Agent 不必要的請求
+      // 使用靜默更新（silent=true），不顯示 loading 狀態，避免閃爍
       if (showConversations) {
-        fetchConversations();
+        fetchConversations(true);
       }
     };
     window.addEventListener(EVENT_NAME, handler);
     return () => window.removeEventListener(EVENT_NAME, handler);
   }, [showConversations, fetchConversations]);
 
-  // 處理創建新對話
-  // 新對話送出
+  // 處理創建新對話 - 帶訊息創建對話並導航
   const handleCreateConversation = async () => {
     if (!newConvMsg.trim()) return;
+
+    const userUid = localStorage.getItem("user_uid");
+    if (!userUid) {
+      alert("無法取得使用者ID，請確認 localStorage 是否已儲存 user_uid。");
+      return;
+    }
+
     setIsCreatingConv(true);
     try {
-      // 跳轉到首頁，帶上 agent_uid 和訊息
-      const params = new URLSearchParams({
-        agent_uid: agent.agent_uid,
-        msg: newConvMsg,
-      });
-      router.push(`/?${params.toString()}`);
+      // 呼叫後端 API 建立新的對話（帶上 agent_uid）
+      const data = await createConversation(userUid, agent.agent_uid);
+
+      // 從後端回傳資料中取得 conversation_uid
+      const conversation_uid = data?.data?.conversation_uid;
+
+      if (!conversation_uid) {
+        throw new Error("無法取得對話ID");
+      }
+
+      // 將使用者輸入的訊息暫存到 localStorage
+      localStorage.setItem(`init_msg_${conversation_uid}`, newConvMsg);
+
+      // 觸發 updateConversationList，通知 RootSidebar 更新
+      window.dispatchEvent(new Event("updateConversationList"));
+
+      // 重置輸入框狀態
+      setShowNewConvInput(false);
+      setNewConvMsg("");
+
+      // 導航頁面到 /conversation/[conversation_uid]
+      router.push(`/conversation/${conversation_uid}`);
+
+      // 延遲再次觸發 updateConversationList，確保後端資料一致後刷新
+      setTimeout(() => {
+        window.dispatchEvent(new Event("updateConversationList"));
+      }, 3000);
     } catch (err) {
+      console.error("Create conversation error:", err);
       alert("建立對話失敗，請稍後再試。");
+    } finally {
       setIsCreatingConv(false);
     }
   };
@@ -121,7 +146,7 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
           <div className="flex items-center gap-2">
             <Button
               onClick={() => setShowNewConvInput(true)}
-              disabled={creating}
+              disabled={isCreatingConv}
               size="sm"
             >
               <Plus className="h-4 w-4 mr-1" />
@@ -173,7 +198,10 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setShowNewConvInput(false)}
+                  onClick={() => {
+                    setShowNewConvInput(false);
+                    setNewConvMsg("");
+                  }}
                   disabled={isCreatingConv}
                   className="flex-1"
                 >
