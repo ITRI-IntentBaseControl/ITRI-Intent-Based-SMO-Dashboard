@@ -19,11 +19,8 @@ export function useConversation(conversationId) {
   const handleOnMessage = useCallback(({ type, data }) => {
     switch (type) {
       case "history": {
-        const mapped = data.map((item) => {
-          // 判定歷史訊息是否為錯誤：
-          // 1. 檢查是否有 isError 欄位
-          // 2. 檢查 event_type 是否為 0
-          // 3. 檢查內容是否包含特定錯誤字串
+        // 先將每個訊息轉換成標準格式
+        const rawMessages = data.map((item) => {
           const contentStr =
             item.text_content?.map((t) => t.content).join("\n") || "";
           const isErrorHistory =
@@ -41,7 +38,43 @@ export function useConversation(conversationId) {
             retry: item.retry || "0",
           };
         });
-        setChatMessages(mapped);
+
+        // 合併相同 retry 的連續 LLM 訊息
+        // 規則：如果連續的 LLM 訊息有相同的 retry 值，則合併它們的 text_content
+        const mergedMessages = [];
+        for (let i = 0; i < rawMessages.length; i++) {
+          const msg = rawMessages[i];
+
+          if (msg.role === "llm" && mergedMessages.length > 0) {
+            const lastMsg = mergedMessages[mergedMessages.length - 1];
+
+            // 檢查是否應該合併：
+            // 1. 上一個訊息也是 LLM
+            // 2. retry 值相同
+            if (lastMsg.role === "llm" && lastMsg.retry === msg.retry) {
+              // 合併 text_content
+              const mergedTextContent = [
+                ...(lastMsg.text_content || []),
+                ...(msg.text_content || []),
+              ];
+              lastMsg.text_content = mergedTextContent;
+              lastMsg.content = mergedTextContent
+                .map((t) => t.content)
+                .join("\n");
+              // 保留較新的 text_uid（如果有的話）
+              lastMsg.text_uid = msg.text_uid || lastMsg.text_uid;
+              lastMsg.reward = msg.reward || lastMsg.reward;
+              // 如果任一個是錯誤，標記為錯誤
+              lastMsg.isError = lastMsg.isError || msg.isError;
+              continue; // 不加入新訊息，繼續下一個
+            }
+          }
+
+          // 不需要合併，直接加入
+          mergedMessages.push(msg);
+        }
+
+        setChatMessages(mergedMessages);
         setIsSending(false);
         break;
       }
@@ -82,23 +115,56 @@ export function useConversation(conversationId) {
           setHasStreamStarted(true);
           setIsSending(false);
         } else if (eventType.includes("2")) {
-          // 串流訊息，取代 thinking 物件
+          // 串流訊息
+          // 重要：同一次回覆可能分多次發送 event_type === 2
+          // 需要合併到同一個 LLM 物件，而不是拆成多個
           // console.log("收到訊息更新:", message.text_content);
           setHasStreamStarted(true);
           setIsSending(true);
-          const newMessage = {
-            ...message,
-            retry: message.retry || "0",
-            text_uid: message.text_uid,
-            reward: message.reward,
-          };
+
           setChatMessages((prev) => {
             const lastIdx = prev.length - 1;
-            if (lastIdx >= 0 && prev[lastIdx].isThinking) {
+            const lastMsg = prev[lastIdx];
+
+            if (lastIdx >= 0 && lastMsg?.isThinking) {
               // 取代 thinking 物件
+              const newMessage = {
+                ...message,
+                retry: message.retry || "0",
+                text_uid: message.text_uid,
+                reward: message.reward,
+                isStreaming: true, // 標記為串流中
+              };
               return [...prev.slice(0, lastIdx), newMessage];
+            } else if (
+              lastIdx >= 0 &&
+              lastMsg?.role === "llm" &&
+              lastMsg?.isStreaming
+            ) {
+              // 合併到正在串流的 LLM 物件
+              const mergedTextContent = [
+                ...(lastMsg.text_content || []),
+                ...(message.text_content || []),
+              ];
+              const updatedMessage = {
+                ...lastMsg,
+                text_content: mergedTextContent,
+                content: mergedTextContent.map((t) => t.content).join("\n"),
+                // 更新 text_uid（如果有的話）
+                text_uid: message.text_uid || lastMsg.text_uid,
+                reward: message.reward || lastMsg.reward,
+              };
+              return [...prev.slice(0, lastIdx), updatedMessage];
             }
-            // 否則直接加入
+
+            // 否則直接加入新訊息（不應該發生，但作為 fallback）
+            const newMessage = {
+              ...message,
+              retry: message.retry || "0",
+              text_uid: message.text_uid,
+              reward: message.reward,
+              isStreaming: true,
+            };
             return [...prev, newMessage];
           });
         } else if (eventType.includes("3")) {
@@ -120,7 +186,14 @@ export function useConversation(conversationId) {
               text_uid: message.text_uid,
               reward: message.reward,
             };
-            setChatMessages((prev) => [...prev, errorMessage]);
+            // 取代 thinking 物件（如果有的話）
+            setChatMessages((prev) => {
+              const lastIdx = prev.length - 1;
+              if (lastIdx >= 0 && prev[lastIdx].isThinking) {
+                return [...prev.slice(0, lastIdx), errorMessage];
+              }
+              return [...prev, errorMessage];
+            });
           }
           setHasStreamStarted(false);
           setIsSending(false);
