@@ -27,7 +27,7 @@ const postAPI = async (
     isDownload?: boolean;
     responseType?: "json" | "blob" | "arraybuffer";
   } = {}
-): Promise<AxiosResponse | Error> => {
+): Promise<AxiosResponse> => {
   const {
     isUpload = false,
     isDownload = false,
@@ -50,21 +50,25 @@ const postAPI = async (
     }
 
     return handleApiResponse(response);
-  } catch (error) {
-    handleApiError(error);
-    return error;
+  } catch (error: any) {
+    if (axios.isAxiosError(error) && error.response) {
+      // 回傳後端的回應，讓呼叫端可直接讀取 response.data（即使是 4xx/5xx）
+      return error.response;
+    }
+    console.error("Unknown Error:", error?.message || error);
+    throw error;
   }
 };
 
 const downloadPDF = async (
   endpoint: string,
   data: object
-): Promise<AxiosResponse | Error> => {
+): Promise<AxiosResponse> => {
   return await postAPI(endpoint, data, { isDownload: true });
 };
 
 // 處理 API 回應
-const handleApiResponse = (response: AxiosResponse): AxiosResponse | void => {
+const handleApiResponse = (response: AxiosResponse): AxiosResponse => {
   switch (response.status) {
     case ApiResponseStatus.SUCCESS:
       return response;
@@ -75,10 +79,9 @@ const handleApiResponse = (response: AxiosResponse): AxiosResponse | void => {
 
 // 處理 API 錯誤
 const handleApiError = (error: any) => {
-  if (error.response) {
-    handleApiResponse(error.response);
-  } else {
-    console.error("Unknown Error:", error.message);
+  // 已在 postAPI catch 中處理與回傳 error.response
+  if (!error?.response) {
+    console.error("Unknown Error:", error?.message || error);
   }
 };
 
