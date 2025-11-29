@@ -9,8 +9,15 @@
 export function inboundMessageDecorator(rawData) {
   try {
     const data = JSON.parse(rawData);
-    const { text_content, role, event_type } = data;
-    return { event_type, role, text_content: text_content };
+    const { text_content, role, event_type, text_uid, reward, retry } = data;
+    return {
+      event_type,
+      role,
+      text_content: text_content,
+      text_uid: text_uid,
+      reward: reward,
+      retry: retry,
+    };
   } catch (err) {
     console.error("[inboundMessageDecorator] parse error:", err, rawData);
     return null;
@@ -20,11 +27,18 @@ export function inboundMessageDecorator(rawData) {
 /**
  * 組裝要送出的 WebSocket payload
  * @param {string} content - 使用者輸入的文字
+ * @param {string} conversation_uid - 對話 UID
+ * @param {string|number} retry - 重試次數，預設為 "0"（字串格式）
  * @returns {object}
  */
-export function outboundMessageDecorator(content, conversation_uid) {
+export function outboundMessageDecorator(
+  content,
+  conversation_uid,
+  retry = "0"
+) {
   return {
     conversation_uid: conversation_uid,
     text_content: [{ type: "message", content }],
+    retry: String(retry),
   };
 }
