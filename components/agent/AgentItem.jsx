@@ -33,6 +33,8 @@ import { createConversation } from "@/app/service/conversation/ExternalService/a
 export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
   const router = useRouter();
   const [showConversations, setShowConversations] = useState(false);
+  const [showNewConvInput, setShowNewConvInput] = useState(false);
+  const [newConvMsg, setNewConvMsg] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isCreatingConv, setIsCreatingConv] = useState(false);
@@ -60,8 +62,10 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
     return () => window.removeEventListener(EVENT_NAME, handler);
   }, [showConversations, fetchConversations]);
 
-  // 處理創建新對話 - 直接創建對話並導航
+  // 處理創建新對話 - 帶訊息創建對話並導航
   const handleCreateConversation = async () => {
+    if (!newConvMsg.trim()) return;
+
     const userUid = localStorage.getItem("user_uid");
     if (!userUid) {
       alert("無法取得使用者ID，請確認 localStorage 是否已儲存 user_uid。");
@@ -80,8 +84,15 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
         throw new Error("無法取得對話ID");
       }
 
+      // 將使用者輸入的訊息暫存到 localStorage
+      localStorage.setItem(`init_msg_${conversation_uid}`, newConvMsg);
+
       // 觸發 updateConversationList，通知 RootSidebar 更新
       window.dispatchEvent(new Event("updateConversationList"));
+
+      // 重置輸入框狀態
+      setShowNewConvInput(false);
+      setNewConvMsg("");
 
       // 導航頁面到 /conversation/[conversation_uid]
       router.push(`/conversation/${conversation_uid}`);
@@ -134,12 +145,12 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
           </button>
           <div className="flex items-center gap-2">
             <Button
-              onClick={handleCreateConversation}
+              onClick={() => setShowNewConvInput(true)}
               disabled={isCreatingConv}
               size="sm"
             >
               <Plus className="h-4 w-4 mr-1" />
-              {isCreatingConv ? "建立中..." : "新對話"}
+              新對話
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -166,34 +177,80 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
         </div>
       </CardHeader>
 
-      {showConversations && (
+      {(showNewConvInput || showConversations) && (
         <CardContent>
-          {loading ? (
-            <div className="text-gray-500 text-sm py-2">載入對話列表中...</div>
-          ) : error ? (
-            <div className="text-red-500 text-sm py-2">{error}</div>
-          ) : conversations.length === 0 ? (
-            <div className="text-gray-500 text-sm py-2">
-              尚無對話，點擊「新對話」創建第一個對話
+          {/* 新對話輸入框 */}
+          {showNewConvInput && (
+            <div className="flex flex-col gap-2 mb-4 pb-4 border-b">
+              <textarea
+                value={newConvMsg}
+                onChange={(e) => setNewConvMsg(e.target.value)}
+                placeholder="請輸入訊息..."
+                className="border rounded-md px-2 py-1 bg-background min-h-[80px]"
+                disabled={isCreatingConv}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleCreateConversation();
+                  }
+                }}
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowNewConvInput(false);
+                    setNewConvMsg("");
+                  }}
+                  disabled={isCreatingConv}
+                  className="flex-1"
+                >
+                  取消
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={handleCreateConversation}
+                  disabled={isCreatingConv || !newConvMsg.trim()}
+                  className="flex-1"
+                >
+                  {isCreatingConv ? "建立中..." : "送出"}
+                </Button>
+              </div>
             </div>
-          ) : (
-            <ul className="space-y-2">
-              {conversations.map((conv) => (
-                <li key={conv.conversation_uid}>
-                  <button
-                    onClick={() =>
-                      handleConversationClick(conv.conversation_uid)
-                    }
-                    className="flex items-center gap-2 w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    <MessageSquare className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">
-                      {conv.conversation_name || "未命名對話"}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+          )}
+
+          {showConversations && (
+            <>
+              {loading ? (
+                <div className="text-gray-500 text-sm py-2">
+                  載入對話列表中...
+                </div>
+              ) : error ? (
+                <div className="text-red-500 text-sm py-2">{error}</div>
+              ) : conversations.length === 0 ? (
+                <div className="text-gray-500 text-sm py-2">
+                  尚無對話，點擊「新對話」創建第一個對話
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {conversations.map((conv) => (
+                    <li key={conv.conversation_uid}>
+                      <button
+                        onClick={() =>
+                          handleConversationClick(conv.conversation_uid)
+                        }
+                        className="flex items-center gap-2 w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <MessageSquare className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm">
+                          {conv.conversation_name || "未命名對話"}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </CardContent>
       )}
