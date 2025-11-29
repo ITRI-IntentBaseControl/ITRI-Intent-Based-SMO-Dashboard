@@ -4,7 +4,6 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PlusIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -21,7 +20,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Edit3, LogOut } from "lucide-react";
+import { MoreVertical, Trash2, Edit3, LogOut, Users } from "lucide-react";
+import { PlusIcon } from "@/components/icons";
 
 import { useConversationManager } from "@/app/hooks/conversation/useConversationManager";
 
@@ -46,28 +46,68 @@ export function RootSidebar() {
     router.push("/signin");
   };
 
+  // 新增：控制新對話輸入框顯示與內容
+  const [showNewConversationInput, setShowNewConversationInput] =
+    React.useState(false);
+  const [newConversationMsg, setNewConversationMsg] = React.useState("");
+  const [isCreating, setIsCreating] = React.useState(false);
+
+  // 新對話送出
+  const handleCreateConversation = async () => {
+    if (!newConversationMsg.trim()) return;
+    setIsCreating(true);
+    try {
+      const userUid = localStorage.getItem("user_uid");
+      if (!userUid) {
+        alert("請先登入");
+        setIsCreating(false);
+        return;
+      }
+      // 呼叫 API 建立新對話
+      const { createConversation } = await import(
+        "@/app/service/conversation/ExternalService/apiService"
+      );
+      const data = await createConversation(userUid);
+      const conversation_uid = data?.data?.conversation_uid;
+      // 暫存訊息
+      localStorage.setItem(`init_msg_${conversation_uid}`, newConversationMsg);
+      window.dispatchEvent(new Event("updateConversationList"));
+      setShowNewConversationInput(false);
+      setNewConversationMsg("");
+      setIsCreating(false);
+      // 跳轉
+      router.push(`/conversation/${conversation_uid}`);
+    } catch (err) {
+      alert("建立對話失敗，請稍後再試。");
+      setIsCreating(false);
+    }
+  };
+
   return (
     <Sidebar className="group-data-[side=left]:border-r-0">
       <SidebarHeader>
         <SidebarMenu>
-          <div className="flex justify-between items-center px-2 py-1">
+          <div className="px-2 py-1">
             <Link
               href="/"
               onClick={() => setOpenMobile(false)}
-              className="text-lg font-semibold hover:bg-muted rounded-md px-2"
+              className="text-lg font-semibold hover:bg-muted rounded-md px-2 block"
             >
               ITRI Intent-Based Chatbot
             </Link>
+          </div>
+          {/* Agent Select Button */}
+          <div className="px-2 py-2">
             <Button
-              variant="ghost"
-              className="p-2"
+              variant="outline"
+              className="w-full flex items-center gap-2 justify-start"
               onClick={() => {
                 setOpenMobile(false);
-                router.push("/");
-                router.refresh();
+                router.push("/agent");
               }}
             >
-              <PlusIcon />
+              <Users className="h-4 w-4" />
+              Agent Select
             </Button>
           </div>
         </SidebarMenu>
