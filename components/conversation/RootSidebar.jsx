@@ -24,10 +24,12 @@ import { MoreVertical, Trash2, Edit3, LogOut, Users } from "lucide-react";
 import { PlusIcon } from "@/components/icons";
 
 import { useConversationManager } from "@/app/hooks/conversation/useConversationManager";
+import { usePathname } from "next/navigation";
 
 export function RootSidebar() {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
+  const pathname = usePathname();
 
   const {
     conversationList,
@@ -127,7 +129,11 @@ export function RootSidebar() {
               return (
                 <div
                   key={c.conversation_uid}
-                  className="flex items-center px-2 py-1 hover:bg-accent hover:text-accent-foreground rounded-md"
+                  className={`flex items-center px-2 py-1 rounded-md transition-colors ${
+                    pathname === `/conversation/${c.conversation_uid}`
+                      ? "bg-primary/15 text-foreground ring-1 ring-primary/40"
+                      : "hover:bg-accent hover:text-accent-foreground"
+                  }`}
                 >
                   {editingConversation === c.conversation_uid ? (
                     <input
