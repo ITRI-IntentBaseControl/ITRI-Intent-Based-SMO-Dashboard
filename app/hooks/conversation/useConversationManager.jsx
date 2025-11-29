@@ -55,7 +55,8 @@ export function useConversationManager() {
           if (pathname === `/conversation/${conversationUid}`) {
             router.push("/");
           }
-          // 🚨 這裡不需要再發送 window.dispatchEvent
+          // 刪除後廣播事件，讓其他 (例如 Agent 頁面) 可以重新載入自己的對話列表
+          window.dispatchEvent(new Event("updateConversationList"));
         } else {
           console.error("刪除對話失敗", res);
         }
