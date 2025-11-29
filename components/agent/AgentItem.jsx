@@ -53,6 +53,19 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
     }
   }, [showConversations, conversations.length, fetchConversations]);
 
+  // 監聽全域對話列表更新事件（例如在側邊欄刪除或新增對話後）
+  useEffect(() => {
+    const EVENT_NAME = "updateConversationList";
+    const handler = () => {
+      // 只有展開狀態下才重新抓，避免一次更新觸發所有 Agent 不必要的請求
+      if (showConversations) {
+        fetchConversations();
+      }
+    };
+    window.addEventListener(EVENT_NAME, handler);
+    return () => window.removeEventListener(EVENT_NAME, handler);
+  }, [showConversations, fetchConversations]);
+
   // 處理創建新對話
   // 新對話送出
   const handleCreateConversation = async () => {
