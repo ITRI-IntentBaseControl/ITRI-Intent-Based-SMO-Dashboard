@@ -49,6 +49,7 @@ export async function renameConversation(conversationUid, newName) {
   }
 }
 
+/** 取得對話文字列表 */
 export async function getConversationHistory(conversationUid) {
   try {
     // 直接使用 postAPI
