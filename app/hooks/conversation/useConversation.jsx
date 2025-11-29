@@ -12,6 +12,8 @@ export function useConversation(conversationId) {
   const [didAutoSend, setDidAutoSend] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [hasStreamStarted, setHasStreamStarted] = useState(false);
+  // 追蹤每個使用者訊息的 retry 次數: { messageIndex: retryCount }
+  const [retryCountMap, setRetryCountMap] = useState({});
 
   // 2) 再宣告 handleOnMessage，再給 useLoadConversationAndConnect 使用
   const handleOnMessage = useCallback(({ type, data }) => {
@@ -34,6 +36,9 @@ export function useConversation(conversationId) {
             text_content: item.text_content,
             content: contentStr,
             isError: isErrorHistory,
+            text_uid: item.text_uid,
+            reward: item.reward,
+            retry: item.retry || "0",
           };
         });
         setChatMessages(mapped);
@@ -59,23 +64,43 @@ export function useConversation(conversationId) {
             ...message,
             role: "llm", // 確保角色是 llm
             isError: true, // 供前端渲染紅色樣式使用
+            retry: message.retry || "0",
+            text_uid: message.text_uid,
+            reward: message.reward,
           };
 
-          // 2. 加入訊息列表
-          setChatMessages((prev) => [...prev, errorMessage]);
-
-          // 3. 重要：將 hasStreamStarted 設為 true
-          // 這是為了防止稍後收到 event_type=3 時，誤以為「什麼都沒收到」而再次跳出通用錯誤
+          // 2. 取代 thinking 物件（如果有的話）
+          setChatMessages((prev) => {
+            const lastIdx = prev.length - 1;
+            if (lastIdx >= 0 && prev[lastIdx].isThinking) {
+              // 取代 thinking 物件
+              return [...prev.slice(0, lastIdx), errorMessage];
+            }
+            // 否則直接加入
+            return [...prev, errorMessage];
+          });
           setHasStreamStarted(true);
-
-          // 4. 雖然 event 3 會負責關閉 isSending，但在這裡設為 false 也可以讓 UI 反應更快
           setIsSending(false);
         } else if (eventType.includes("2")) {
-          // 串流訊息
+          // 串流訊息，取代 thinking 物件
           // console.log("收到訊息更新:", message.text_content);
           setHasStreamStarted(true);
           setIsSending(true);
-          setChatMessages((prev) => [...prev, message]);
+          const newMessage = {
+            ...message,
+            retry: message.retry || "0",
+            text_uid: message.text_uid,
+            reward: message.reward,
+          };
+          setChatMessages((prev) => {
+            const lastIdx = prev.length - 1;
+            if (lastIdx >= 0 && prev[lastIdx].isThinking) {
+              // 取代 thinking 物件
+              return [...prev.slice(0, lastIdx), newMessage];
+            }
+            // 否則直接加入
+            return [...prev, newMessage];
+          });
         } else if (eventType.includes("3")) {
           // 串流訊息結束
           // console.log("結束訊息:", message.text_content);
@@ -91,6 +116,9 @@ export function useConversation(conversationId) {
                   content: "Agent 發生系統性故障。",
                 },
               ],
+              retry: message.retry || "0",
+              text_uid: message.text_uid,
+              reward: message.reward,
             };
             setChatMessages((prev) => [...prev, errorMessage]);
           }
@@ -128,7 +156,7 @@ export function useConversation(conversationId) {
     setDidAutoSend(true);
   }
 
-  function handleSendMessage(msg) {
+  function handleSendMessage(msg, retry = "0", isRegenerate = false) {
     if (isSending) return;
     setIsSending(true);
     setHasStreamStarted(false);
@@ -139,16 +167,40 @@ export function useConversation(conversationId) {
     const content = String(msg ?? "").trim();
     if (!content) return;
     setInputValue("");
-    setChatMessages((prev) => [...prev, { role: "user", content }]);
-    sendMessage(content);
+
+    // 如果不是重新生成，才添加新的 user 訊息
+    if (!isRegenerate) {
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "user", content, retry: String(retry) },
+      ]);
+    }
+
+    // 新增 thinking LLM 物件，等待真正的回覆來取代
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        role: "llm",
+        content: "Thinking…",
+        text_content: [],
+        isThinking: true,
+        retry: String(retry),
+      },
+    ]);
+
+    sendMessage(content, String(retry));
   }
 
-  function sendMessage(content) {
+  function sendMessage(content, retry = "0") {
     if (!wsServiceRef.current) return;
 
     //顯示Thinking...效果，不加入訊息隊列
 
-    const payload = outboundMessageDecorator(content, conversationId);
+    const payload = outboundMessageDecorator(
+      content,
+      conversationId,
+      String(retry)
+    );
     wsServiceRef.current.send(payload);
   }
 
@@ -158,7 +210,10 @@ export function useConversation(conversationId) {
     inputValue,
     setInputValue,
     chatMessages,
+    setChatMessages,
     handleSendMessage,
     isSending,
+    retryCountMap,
+    setRetryCountMap,
   };
 }
