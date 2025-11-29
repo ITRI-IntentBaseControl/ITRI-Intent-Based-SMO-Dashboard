@@ -20,8 +20,16 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Edit3, LogOut, Users } from "lucide-react";
+import {
+  MoreVertical,
+  Trash2,
+  Edit3,
+  LogOut,
+  Users,
+  Download,
+} from "lucide-react";
 import { PlusIcon } from "@/components/icons";
+import { ExportConversationDialog } from "@/components/conversation/ExportConversationDialog";
 
 import { useConversationManager } from "@/app/hooks/conversation/useConversationManager";
 import { usePathname } from "next/navigation";
@@ -53,6 +61,17 @@ export function RootSidebar() {
     React.useState(false);
   const [newConversationMsg, setNewConversationMsg] = React.useState("");
   const [isCreating, setIsCreating] = React.useState(false);
+
+  // 匯出對話相關狀態
+  const [exportDialogOpen, setExportDialogOpen] = React.useState(false);
+  const [exportingConversation, setExportingConversation] =
+    React.useState(null);
+
+  // 開啟匯出對話框
+  const openExportDialog = (conversation) => {
+    setExportingConversation(conversation);
+    setExportDialogOpen(true);
+  };
 
   // 新對話送出
   const handleCreateConversation = async () => {
@@ -169,6 +188,12 @@ export function RootSidebar() {
                         <Edit3 className="h-4 w-4" /> 重新命名
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        onClick={() => openExportDialog(c)}
+                        className="cursor-pointer flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" /> 匯出
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onClick={() => handleDelete(c.conversation_uid)}
                         className="cursor-pointer text-destructive flex items-center gap-2"
                       >
@@ -192,6 +217,13 @@ export function RootSidebar() {
           <LogOut className="h-4 w-4" /> 登出
         </Button>
       </SidebarFooter>
+
+      {/* 匯出對話對話框 */}
+      <ExportConversationDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        conversation={exportingConversation}
+      />
     </Sidebar>
   );
 }
