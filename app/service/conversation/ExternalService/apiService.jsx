@@ -76,6 +76,26 @@ export async function getConversationHistory(conversationUid) {
 }
 
 /**
+ * 對指定文字給予獎懲
+ * @param {string} conversationUid
+ * @param {string} textUid
+ * @param {"good"|"bad"} reward
+ */
+export async function rewardText(conversationUid, textUid, reward) {
+  try {
+    const response = await postAPI("conversation_mgt/TextManager/reward_text", {
+      conversation_uid: conversationUid,
+      text_uid: textUid,
+      reward,
+    });
+    return response.data; // { status_code, message }
+  } catch (error) {
+    console.error("[rewardText] API Error:", error);
+    throw error;
+  }
+}
+
+/**
  * 建立對話
  * @param {string} user_uid - 使用者 UID
  * @param {string} agent_uid - Agent UID (可選)
