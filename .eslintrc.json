@@ -4,8 +4,7 @@
     "plugin:import/recommended",
     "plugin:import/typescript",
     "prettier",
-    "plugin:tailwindcss/recommended",
-    "plugin:storybook/recommended"
+    "plugin:tailwindcss/recommended"
   ],
   "plugins": [
     "tailwindcss"

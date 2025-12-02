@@ -1,10 +1,9 @@
 // components/sidebar/RootSidebar.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import { PlusIcon } from "@/components/icons";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -21,76 +20,27 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Edit3, LogOut } from "lucide-react";
+import { MoreVertical, Trash2, Edit3, LogOut, Download } from "lucide-react";
+import { ExportConversationDialog } from "@/components/conversation/ExportConversationDialog";
 
-import {
-  getConversationList,
-  deleteConversation,
-} from "@/app/service/conversation/ExternalService/apiService";
-import { useRenameConversation } from "@/app/hooks/conversation/useRenameConversation";
+import { useConversationManager } from "@/app/hooks/conversation/useConversationManager";
+import { usePathname } from "next/navigation";
 
 export function RootSidebar() {
   const router = useRouter();
-  const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
-  const [conversationList, setConversationList] = useState([]);
+  const pathname = usePathname();
 
   const {
+    conversationList,
+    handleDelete,
     editingConversation,
     editValue,
     setEditValue,
     inputRef,
     startEditing,
     handleRename,
-  } = useRenameConversation(conversationList, setConversationList);
-
-  // fetch list
-  const fetchConversations = async () => {
-    const userUid = localStorage.getItem("user_uid");
-    if (!userUid) {
-      router.push("/signin");
-      return;
-    }
-    try {
-      const data = await getConversationList(userUid);
-      if (data?.status_code && data.data) {
-        setConversationList(data.data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    fetchConversations();
-  }, []);
-
-  useEffect(() => {
-    const onUpdate = () => fetchConversations();
-    window.addEventListener("updateConversationList", onUpdate);
-    return () => window.removeEventListener("updateConversationList", onUpdate);
-  }, []);
-
-  // delete conversation
-  const handleDelete = async (conversationUid) => {
-    try {
-      const res = await deleteConversation(conversationUid);
-        if (res?.status_code === 200) {
-        setConversationList((prev) =>
-          prev.filter((c) => c.conversation_uid !== conversationUid)
-        );
-        if (pathname === `/conversation/${conversationUid}`) {
-          router.push("/");
-        }
-        window.dispatchEvent(new Event("updateConversationList"));
-        setOpenMobile(false);
-      } else {
-        console.error("刪除對話失敗", res);
-      }
-    } catch (err) {
-      console.error("刪除對話出錯", err);
-    }
-  };
+  } = useConversationManager();
 
   // logout handler
   const handleLogout = () => {
@@ -98,29 +48,29 @@ export function RootSidebar() {
     router.push("/signin");
   };
 
+  // 匯出對話相關狀態
+  const [exportDialogOpen, setExportDialogOpen] = React.useState(false);
+  const [exportingConversation, setExportingConversation] =
+    React.useState(null);
+
+  // 開啟匯出對話框
+  const openExportDialog = (conversation) => {
+    setExportingConversation(conversation);
+    setExportDialogOpen(true);
+  };
+
   return (
     <Sidebar className="group-data-[side=left]:border-r-0">
       <SidebarHeader>
         <SidebarMenu>
-          <div className="flex justify-between items-center px-2 py-1">
+          <div className="px-2 py-1">
             <Link
               href="/"
               onClick={() => setOpenMobile(false)}
-              className="text-lg font-semibold hover:bg-muted rounded-md px-2"
+              className="text-lg font-semibold hover:bg-muted rounded-md px-2 block"
             >
               ITRI Intent-Based Chatbot
             </Link>
-            <Button
-              variant="ghost"
-              className="p-2"
-              onClick={() => {
-                setOpenMobile(false);
-                router.push("/");
-                router.refresh();
-              }}
-            >
-              <PlusIcon />
-            </Button>
           </div>
         </SidebarMenu>
       </SidebarHeader>
@@ -139,7 +89,11 @@ export function RootSidebar() {
               return (
                 <div
                   key={c.conversation_uid}
-                  className="flex items-center px-2 py-1 hover:bg-accent hover:text-accent-foreground rounded-md"
+                  className={`flex items-center px-2 py-1 rounded-md transition-colors ${
+                    pathname === `/conversation/${c.conversation_uid}`
+                      ? "bg-primary/15 text-foreground ring-1 ring-primary/40"
+                      : "hover:bg-accent hover:text-accent-foreground"
+                  }`}
                 >
                   {editingConversation === c.conversation_uid ? (
                     <input
@@ -175,6 +129,12 @@ export function RootSidebar() {
                         <Edit3 className="h-4 w-4" /> 重新命名
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        onClick={() => openExportDialog(c)}
+                        className="cursor-pointer flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" /> 匯出
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onClick={() => handleDelete(c.conversation_uid)}
                         className="cursor-pointer text-destructive flex items-center gap-2"
                       >
@@ -198,6 +158,13 @@ export function RootSidebar() {
           <LogOut className="h-4 w-4" /> 登出
         </Button>
       </SidebarFooter>
+
+      {/* 匯出對話對話框 */}
+      <ExportConversationDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        conversation={exportingConversation}
+      />
     </Sidebar>
   );
 }

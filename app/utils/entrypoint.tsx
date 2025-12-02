@@ -8,7 +8,7 @@ const API_PORT = process.env.API_PORT;
 const API_ROOT = process.env.API_ROOT;
 const API_VERSION = process.env.API_VERSION;
 const API = `${PROTOCAL}://${HOST}:${API_PORT}/${API_ROOT}/${API_VERSION}`;
-console.log(API);
+// console.log(API);
 
 // 枚舉：定義 API 回應狀態碼
 enum ApiResponseStatus {
@@ -27,7 +27,7 @@ const postAPI = async (
     isDownload?: boolean;
     responseType?: "json" | "blob" | "arraybuffer";
   } = {}
-): Promise<AxiosResponse | Error> => {
+): Promise<AxiosResponse> => {
   const {
     isUpload = false,
     isDownload = false,
@@ -50,61 +50,28 @@ const postAPI = async (
     }
 
     return handleApiResponse(response);
-  } catch (error) {
-    handleApiError(error);
-    return error;
+  } catch (error: any) {
+    if (axios.isAxiosError(error) && error.response) {
+      // 回傳後端的回應，讓呼叫端可直接讀取 response.data（即使是 4xx/5xx）
+      return error.response;
+    }
+    console.error("Unknown Error:", error?.message || error);
+    throw error;
   }
 };
 
 const downloadPDF = async (
   endpoint: string,
   data: object
-): Promise<AxiosResponse | Error> => {
+): Promise<AxiosResponse> => {
   return await postAPI(endpoint, data, { isDownload: true });
 };
 
-// 具體的 API 請求
-// const login = async (data: object): Promise<AxiosResponse | Error> => {
-//   localStorage.setItem("isLoggedIn", "true");
-//   localStorage.setItem("accountname", "test");
-//   const endpoint = APIKEYS.LOGIN_ACCOUNT;
-//   return await postAPI(endpoint, data);
-// };
-
-// const signup = async (data: object): Promise<AxiosResponse | Error> => {
-//   const endpoint = "AccountValidator/signup";
-//   return await postAPI(endpoint, data);
-// };
-
-// const testAPI = async (
-//   endpoint: string,
-//   data: object
-// ): Promise<AxiosResponse | Error> => {
-//   const TEST_API_BASE_URL = process.env.NEXT_PUBLIC_TEST_API;
-//   const url = `${TEST_API_BASE_URL}/${endpoint}`;
-//   try {
-//     const response = await axios.post(url, data);
-//     return handleApiResponse(response);
-//   } catch (error) {
-//     handleApiError(error);
-//     return error;
-//   }
-// };
-
 // 處理 API 回應
-const handleApiResponse = (response: AxiosResponse): AxiosResponse | void => {
+const handleApiResponse = (response: AxiosResponse): AxiosResponse => {
   switch (response.status) {
     case ApiResponseStatus.SUCCESS:
       return response;
-    // case ApiResponseStatus.CLIENT_ERROR:
-    //   console.error("Client Error:", response.data.detail);
-    //   break;
-    // case ApiResponseStatus.METHOD_NOT_ALLOWED:
-    //   console.error("Method Not Allowed");
-    //   break;
-    // case ApiResponseStatus.INTERNAL_SERVER_ERROR:
-    //   console.error("Internal Server Error:", response.data.detail);
-    //   break;
     default:
       return response;
   }
@@ -112,10 +79,9 @@ const handleApiResponse = (response: AxiosResponse): AxiosResponse | void => {
 
 // 處理 API 錯誤
 const handleApiError = (error: any) => {
-  if (error.response) {
-    handleApiResponse(error.response);
-  } else {
-    console.error("Unknown Error:", error.message);
+  // 已在 postAPI catch 中處理與回傳 error.response
+  if (!error?.response) {
+    console.error("Unknown Error:", error?.message || error);
   }
 };
 

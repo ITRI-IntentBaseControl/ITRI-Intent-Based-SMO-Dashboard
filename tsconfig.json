@@ -30,7 +30,6 @@
     "next.config.js",
     "app/service/signin/ExternalService/siginService.jsx",
     "app/(member)/signin/page.jsx",
-    "app/(conversation)/components/chat/icons.jsx",
     "components/conversation/ConversationHeader.jsx",
     "components/conversation/ConversationInput.jsx",
     "components/conversation/ConversationMessages.jsx",
@@ -39,7 +38,8 @@
     "components/conversation/ConversationClient.jsx",
     "app/(conversation)/page.jsx",
     "app/(conversation)/conversation/[conversation_uid]/page.jsx",
-    "app/(conversation)/layout.jsx"
-, "components/test/RenderDynamicContent.tsx"  ],
+    "app/(conversation)/layout.jsx",
+    "components/conversation/RenderDynamicContent.tsxtent.tsx"
+  ],
   "exclude": ["node_modules"]
 }

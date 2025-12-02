@@ -1,121 +1,170 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { createConversation } from "../service/conversation/ExternalService/apiService";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
+import { AgentItem } from "@/components/agent/AgentItem";
 import { ConversationHeader } from "@/components/conversation/ConversationHeader";
+import { CreateAgentDialog } from "@/components/agent/CreateAgentDialog";
+import { EditAgentDialog } from "@/components/agent/EditAgentDialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import {
+  createAgent,
+  updateAgent,
+  deleteAgent,
+} from "@/app/service/agent/ExternalService/agentService";
+import { useAgentManager } from "@/app/hooks/agent/useAgentManager";
+import { toast } from "sonner";
 
 export default function HomePage() {
-  const router = useRouter();
-  const [userMessage, setUserMessage] = useState("");
-  const [userUid, setUserUid] = useState(null);
-  const [isSending, setIsSending] = useState(false);
+  const { agentList, loading, error, refetchAgents } = useAgentManager();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState(null);
 
-  // 在元件載入時從 localStorage 抓取 user_uid
-  useEffect(() => {
-    const storedUserUid =
-      typeof window !== "undefined" ? localStorage.getItem("user_uid") : null;
-    setUserUid(storedUserUid);
-  }, []);
-
-  // 當使用者輸入訊息後
-  const handleSend = async () => {
-    if (isSending) return;
+  const handleCreateAgent = async (agentName, apiKey) => {
+    const userUid = localStorage.getItem("user_uid");
+    if (!userUid) {
+      toast.error("無法取得使用者ID");
+      return false;
+    }
 
     try {
-      // 確認有取得 userUid 才進行 API 呼叫
-      if (!userUid) {
-        alert("無法取得使用者ID，請確認 localStorage 是否已儲存 user_uid。");
-        return;
+      const response = await createAgent(userUid, agentName, apiKey);
+
+      if (response?.status_code === 201) {
+        toast.success("成功創建 agent");
+
+        // 強制重新呼叫 get_agent_list_metadata API
+        await refetchAgents();
+
+        // 關閉對話框
+        setCreateDialogOpen(false);
+
+        return true;
+      } else {
+        toast.error(response?.message || "創建 Agent 失敗");
+        return false;
       }
-
-      if (!userMessage.trim()) {
-        alert("請先輸入訊息");
-        return;
-      }
-      
-      setIsSending(true);
-
-      // 1. 呼叫後端 API 建立新的對話
-      const data = await createConversation(userUid);
-
-      // 2. 從後端回傳資料中取得 conversation_uid
-      const conversation_uid = data?.data?.conversation_uid;
-
-      // 3. 將使用者輸入的訊息暫存到 localStorage(才有對話生成)
-      localStorage.setItem(`init_msg_${conversation_uid}`, userMessage);
-
-      // 4. 觸發 updateConversationList，通知 RootSidebar 更新
-      window.dispatchEvent(new Event("updateConversationList"));
-
-      // 5. 導航頁面到 /conversation/[conversation_uid]
-      router.push(`/conversation/${conversation_uid}`);
-
-      // 6. 十秒後再次觸發 updateConversationList，通知 RootSidebar 更新
-      setTimeout(() => {
-        window.dispatchEvent(new Event("updateConversationList"));
-      }, 10000);
     } catch (error) {
-      console.error("Create conversation error:", error);
-      alert("建立對話失敗，請稍後再試。");
-      setIsSending(false);  
+      console.error("Failed to create agent:", error);
+      toast.error("創建 Agent 失敗");
+      return false;
     }
   };
 
-  // 按 Enter (非 Shift+Enter) 送出
-  const handleKeyDown = (e) => {
-    if (isSending) return;
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleEditAgent = (agent) => {
+    setSelectedAgent(agent);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateAgent = async (agentUid, agentName, apiKey) => {
+    try {
+      const response = await updateAgent(agentUid, agentName, apiKey);
+      if (response?.status_code === 200) {
+        toast.success("成功更新 agent");
+
+        // 重新獲取 agent 列表
+        await refetchAgents();
+
+        // 返回成功，讓子組件關閉對話框
+        return true;
+      } else {
+        toast.error(response?.message || "更新 Agent 失敗");
+        return false;
+      }
+    } catch (error) {
+      console.error("Failed to update agent:", error);
+      toast.error("更新 Agent 失敗");
+      return false;
+    }
+  };
+
+  const handleDeleteAgent = async (agentUid) => {
+    try {
+      const response = await deleteAgent(agentUid);
+      if (response?.status_code === 200) {
+        toast.success("成功刪除 agent");
+        // 重新獲取 agent 列表
+        await refetchAgents();
+        // 更新側邊欄的對話列表（因為相關對話已被刪除）
+        window.dispatchEvent(new Event("updateConversationList"));
+        // 再次延遲觸發，確保後端資料一致後刷新
+        setTimeout(() => {
+          window.dispatchEvent(new Event("updateConversationList"));
+        }, 1500);
+      } else {
+        toast.error(response?.message || "刪除 Agent 失敗");
+      }
+    } catch (error) {
+      console.error("Failed to delete agent:", error);
+      toast.error("刪除 Agent 失敗");
     }
   };
 
   return (
-    // 外層不置中，Header 置頂；內容區再做置中
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header 固定在畫面上方並佔滿寬度 */}
-      <div className="sticky top-0 z-50 w-full">
-        <ConversationHeader />
+    <div className="flex flex-col h-screen">
+      {/* Header */}
+      <ConversationHeader title="Agent Select" />
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold mb-2">選擇 Agent</h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                選擇一個 Agent 來查看對話或創建新對話
+              </p>
+            </div>
+            <Button
+              onClick={() => setCreateDialogOpen(true)}
+              className="shrink-0"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              創建 Agent
+            </Button>
+          </div>
+
+          {/* Agent List */}
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="text-gray-500">載入 Agent 列表中...</div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="text-red-500">錯誤: {error}</div>
+            </div>
+          ) : agentList.length === 0 ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="text-gray-500">尚無可用的 Agent</div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {agentList.map((agent) => (
+                <AgentItem
+                  key={agent.agent_uid}
+                  agent={agent}
+                  onEditAgent={handleEditAgent}
+                  onDeleteAgent={handleDeleteAgent}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* 內容置中 */}
-      <main className="flex-1 flex items-center justify-center px-4">
-        <div className="w-full max-w-2xl mx-auto">
-          {/* 標題區塊（不要背景色） */}
-          <div className="text-center mb-4">
-            <h1 className="text-2xl font-bold mb-1">
-              ITRI Intent-Based Chatbot
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              你可以在此輸入第一則訊息，然後系統會為你建立新的對話。
-            </p>
-          </div>
-
-          {/* 輸入與送出區塊（有 bg-muted） */}
-          <div className="py-4 flex flex-col gap-2 rounded-2xl border border-border bg-muted">
-            <textarea
-              value={userMessage}
-              onChange={(e) => setUserMessage(e.target.value)}
-              placeholder="在這裡輸入訊息，按 Enter 即可送出 (Shift+Enter換行)"
-              className="min-h-[140px] bg-muted px-3 py-2 text-sm leading-6 resize-y overflow-auto focus-visible:outline-none rounded-2xl"
-              onKeyDown={handleKeyDown}
-              disabled={isSending}
-            />
-
-            <div className="flex justify-end">
-              <Button
-                onClick={handleSend}
-                disabled={!userMessage.trim() || isSending}
-                className="rounded-xl px-3 py-2 h-fit mt-2 mr-2"
-              >
-                →
-              </Button>
-            </div>
-          </div>
-        </div>
-      </main>
+      {/* Dialogs */}
+      <CreateAgentDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreateSuccess={handleCreateAgent}
+      />
+      <EditAgentDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        agent={selectedAgent}
+        onUpdateSuccess={handleUpdateAgent}
+      />
     </div>
   );
 }
