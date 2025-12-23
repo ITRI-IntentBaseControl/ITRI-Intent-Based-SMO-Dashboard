@@ -1,0 +1,133 @@
+{
+  "sidebar": {
+    "title": "ITRI Intent-Based Chatbot",
+    "no_conversations": "尚無對話紀錄",
+    "new_conversation": "新對話",
+    "rename": "重新命名",
+    "export": "匯出",
+    "delete": "刪除",
+    "logout": "登出"
+  },
+  "agent": {
+    "create_title": "創建新 Agent",
+    "create_description": "填寫 Agent 名稱和 API Key 來創建新的 Agent",
+    "update_title": "編輯 Agent",
+    "update_description": "更新 Agent 名稱或 API Key（留空則不更新 API Key）",
+    "name": "Agent 名稱",
+    "api_key": "API Key",
+    "placeholder_name": "輸入 Agent 名稱",
+    "placeholder_api_key": "輸入 API Key",
+    "cancel": "取消",
+    "creating": "創建中...",
+    "create": "創建",
+    "please_fill_fields": "請填寫所有欄位",
+    "name_required": "Agent 名稱不能為空",
+    "cannot_get_user_id": "無法取得使用者ID，請確認 localStorage 是否包含 user_uid。",
+    "create_success": "成功創建 agent",
+    "create_failed": "創建 Agent 失敗",
+    "update_success": "成功更新 agent",
+    "update_failed": "更新 Agent 失敗",
+    "delete_success": "成功刪除 agent",
+    "delete_failed": "刪除 Agent 失敗",
+    "select_title": "Agent 選擇",
+    "select_heading": "選擇 Agent",
+    "select_description": "選擇一個 Agent 來查看或創建對話",
+    "create": "創建 Agent",
+    "loading": "載入 Agent 列表中...",
+    "error_prefix": "錯誤:",
+    "no_agents": "尚無可用的 Agent",
+    "api_key_optional_label": "API Key（選填）",
+    "api_key_edit_placeholder": "輸入新的 API Key（留空則不更新）",
+    "update": "更新",
+    "updating": "更新中..."
+  },
+  "export": {
+    "title": "匯出對話",
+    "description": "輸入檔案名稱後，對話紀錄將以 JSON 格式下載到您的電腦。",
+    "filename": "檔案名稱",
+    "placeholder": "請輸入檔案名稱",
+    "cancel": "取消",
+    "exporting": "匯出中...",
+    "export": "匯出",
+    "export_failed": "匯出失敗：",
+    "export_failed_retry": "匯出失敗，請稍後再試。"
+  },
+  "role": {
+    "user": "使用者",
+    "assistant": "助理",
+    "rating": "評分"
+  },
+  "message": {
+    "unknown_error": "發生未知錯誤"
+  },
+  "auth": {
+    "username": "使用者名稱",
+    "password": "密碼",
+    "email": "電子郵件",
+    "user_placeholder": "使用者名稱",
+    "email_placeholder": "user@example.com",
+    "signin_title": "登入",
+    "signin_description": "請使用使用者名稱與密碼登入",
+    "signin_button": "登入",
+    "signup_title": "註冊",
+    "signup_description": "使用使用者名稱、電子郵件與密碼建立帳號",
+    "signup_button": "註冊",
+    "no_account_prompt": "還沒有帳號？免費",
+    "have_account_prompt": "已經有帳號？立即",
+    "signup_link": "註冊",
+    "signin_link": "登入"
+  },
+  "auth_toast": {
+    "login_success": "登入成功！",
+    "login_invalid": "帳號或密碼錯誤！",
+    "login_failed": "發生錯誤！",
+    "register_success": "帳號建立成功",
+    "register_failed": "建立帳號失敗",
+    "register_exists": "帳號已存在",
+    "register_invalid": "輸入資料驗證失敗！"
+  },
+  "conversation": {
+    "loading": "載入對話列表中...",
+    "no_conversations_hint": "尚無對話，點擊「新對話」創建第一個對話",
+    "unnamed": "未命名對話",
+    "new_button": "新對話",
+    "create": "建立",
+    "creating": "建立中...",
+    "send": "送出",
+    "message_placeholder": "請輸入訊息...",
+    "input_placeholder": "輸入訊息...",
+    "assistant_outputting": "助理正在輸出中...",
+    "sending": "送出中...",
+    "confirm_delete_agent_title": "確認刪除 Agent",
+    "confirm_delete_agent_description": "刪除 Agent 會導致所有相關的 Conversation 也一併刪除，是否確定要刪除？",
+    "confirm": "確定刪除",
+    "deleting": "刪除中...",
+    "cannot_get_user_id": "無法取得使用者ID，請確認 localStorage 是否已儲存 user_uid。",
+    "create_failed": "建立對話失敗，請稍後再試。",
+    "reward_good_title": "讚",
+    "reward_bad_title": "爛",
+    "regenerate": "重新生成",
+    "prev_version": "上一個版本",
+    "next_version": "下一個版本"
+  },
+
+  "render": {
+    "loading_image": "載入圖片中...",
+    "image_error": "圖片錯誤：",
+    "image_missing_ids": "缺少 conversationId 或 imageId，無法載入圖片。",
+    "image_failed_retrieve": "無法取得圖片資料。",
+    "image_failed_load": "載入圖片失敗",
+    "iframe_parse_error": "無法解析 <history> iframe 內容。",
+    "collapse": "收起",
+    "show_all": "顯示全部",
+    "detailed_content": "詳細內容",
+    "thought_process": "思考過程",
+    "thinking": "思考中..."
+  },
+
+  "ui": {
+    "toggle_sidebar": "切換側邊欄",
+    "switch_to_light": "切換到淺色模式",
+    "switch_to_dark": "切換到深色模式"
+  }
+}
