@@ -4,6 +4,7 @@ import { SparklesIcon } from "@/components/icons";
 import { AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { RenderDynamicContent } from "./RenderDynamicContent";
+import { useLocale } from "@/components/LocaleProvider";
 
 /**
  * 顏色改為使用 shadcn/tailwind 的語義化 token，
@@ -12,6 +13,7 @@ import { RenderDynamicContent } from "./RenderDynamicContent";
  */
 export function MessageBubble({ msg, onSelectOption, conversationId }) {
   const { role, text_content, isError } = msg;
+  const { t } = useLocale();
   const isUser = role === "user";
   const isAssistant = role === "llm";
 
@@ -38,7 +40,7 @@ export function MessageBubble({ msg, onSelectOption, conversationId }) {
   // 「思考中」的佔位
   const thinking = (
     <p className="rounded-lg px-3 py-2 italic text-center text-muted-foreground">
-      Thinking…
+      {t("render.thinking")}
     </p>
   );
 
@@ -75,7 +77,7 @@ export function MessageBubble({ msg, onSelectOption, conversationId }) {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold"></span>
                     {/* 假設錯誤內容在第一個 text_content 中 */}
-                    {text_content[0]?.content || "發生未知錯誤"}
+                    {text_content[0]?.content || t("message.unknown_error")}
                   </div>
                 ) : (
                   <RenderDynamicContent

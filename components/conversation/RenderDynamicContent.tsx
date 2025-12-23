@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { splitMarkdownBlocks, Detected } from "./markdown-detector";
 import { getImage } from "@/app/service/conversation/ExternalService/apiService";
+import { useLocale } from "@/components/LocaleProvider";
 
 interface RawItem {
   type?: "image" | "message";
@@ -32,13 +33,14 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     let objectUrl: string | null = null;
 
     const fetchAndSetImage = async () => {
       if (!conversationId || !imageId) {
-        setError("Missing conversationId or imageId for image.");
+        setError(t("render.image_missing_ids"));
         setIsLoading(false);
         return;
       }
@@ -52,11 +54,14 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
           objectUrl = URL.createObjectURL(imageBlob);
           setImageUrl(objectUrl);
         } else {
-          setError("Failed to retrieve image data.");
+          setError(t("render.image_failed_retrieve"));
         }
       } catch (err: any) {
         console.error("Error fetching image in component:", err);
-        setError(`Failed to load image: ${err.message || "Unknown error"}`);
+        setError(
+          t("render.image_failed_load") +
+            (err?.message ? `: ${err.message}` : "")
+        );
       } finally {
         setIsLoading(false);
       }
@@ -75,7 +80,7 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
   if (isLoading) {
     return (
       <div key={i} className="p-3 mb-4 text-center text-muted-foreground">
-        Loading image...
+        {t("render.loading_image")}
       </div>
     );
   }
@@ -83,7 +88,7 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
   if (error) {
     return (
       <div key={i} className="p-3 mb-4 text-center text-destructive">
-        Error: {error}
+        {t("render.image_error")} {error}
       </div>
     );
   }
@@ -111,13 +116,14 @@ const IframeRendererImpl: React.FC<{
   htmlContent: string;
   partKey: string;
 }> = ({ htmlContent, partKey }) => {
+  const { t } = useLocale();
   // 1. 用一個寬鬆的 Regex 找到 <iframe> 標籤及其所有屬性
   const iframeTagMatch = htmlContent.match(/<iframe\s+([^>]*)>/);
   if (!iframeTagMatch || !iframeTagMatch[1]) {
     console.error("Could not parse iframe content:", htmlContent);
     return (
       <div className="text-destructive mb-4">
-        Error: Could not parse &lt;history&gt; iframe content.
+        {t("render.iframe_parse_error")}
       </div>
     );
   }
@@ -147,6 +153,7 @@ const IframeRenderer = React.memo(IframeRendererImpl);
 export function RenderDynamicContent({ data, conversationId }: Props) {
   // 1) 圖片 Modal 狀態
   const [img, setImg] = useState<string | null>(null);
+  const { t } = useLocale();
 
   // 2) normalize 函數
   const normalize = (input: unknown) =>
@@ -384,6 +391,7 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
     content: string;
     chunkKey: string;
   }> = ({ content, chunkKey }) => {
+    const { t } = useLocale();
     const [expanded, setExpanded] = useState<boolean[]>([]);
     const blocks: Detected[] = useMemo(() => {
       const tableSplitRegex = /(?=^\|.*\|\s*$\r?\n^\|?[:\- ]+\|.*$)/m;
@@ -443,7 +451,9 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
                       onClick={() => toggle(i)}
                       className="mt-2 px-3 py-1 border border-border rounded text-sm bg-primary text-primary-foreground hover:opacity-90"
                     >
-                      {expanded[i] ? "收起" : "顯示全部"}
+                      {expanded[i]
+                        ? t("render.collapse")
+                        : t("render.show_all")}
                     </button>
                   )}
                 </div>
@@ -537,7 +547,10 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
               );
             } else if (tagType === "detailed_summary") {
               renderedElements.push(
-                <CollapsibleBlock key={partKey} title="詳細內容">
+                <CollapsibleBlock
+                  key={partKey}
+                  title={t("render.detailed_content")}
+                >
                   {renderedChunk}
                 </CollapsibleBlock>
               );
@@ -574,7 +587,10 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
 
               if (tagType === "思考") {
                 renderedElements.push(
-                  <CollapsibleBlock key={partKey} title="思考過程">
+                  <CollapsibleBlock
+                    key={partKey}
+                    title={t("render.thought_process")}
+                  >
                     {renderedChunk}
                   </CollapsibleBlock>
                 );

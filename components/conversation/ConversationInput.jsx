@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/components/LocaleProvider";
 
 export function ConversationInput({
   inputValue,
@@ -10,13 +11,18 @@ export function ConversationInput({
   isLoading,
   isSending = false, // true = 仍可打字，但禁止送出
 }) {
+  const { t } = useLocale();
   return (
     <div className="w-auto mx-auto py-4 flex flex-col gap-2 rounded-2xl border border-border bg-muted">
       {/* 上半部：多行輸入框 —— 修改 disabled 屬性 */}
       <textarea
         value={inputValue}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={isSending ? "Assistant 正在輸出中…" : "Type message..."}
+        placeholder={
+          isSending
+            ? t("conversation.assistant_outputting")
+            : t("conversation.input_placeholder")
+        }
         className="
           flex-1 bg-muted px-3 py-2 text-sm leading-6
           resize-y overflow-auto focus-visible:outline-none
@@ -42,7 +48,7 @@ export function ConversationInput({
           disabled={isLoading || !inputValue.trim() || isSending}
           className="rounded-xl px-3 py-2 h-fit mt-2 mr-2"
         >
-          {isLoading ? "Sending..." : "→"}
+          {isLoading ? t("conversation.sending") : "→"}
         </Button>
       </div>
     </div>

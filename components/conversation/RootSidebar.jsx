@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Trash2, Edit3, LogOut, Download } from "lucide-react";
 import { ExportConversationDialog } from "@/components/conversation/ExportConversationDialog";
+import { useLocale } from "@/components/LocaleProvider";
 
 import { useConversationManager } from "@/app/hooks/conversation/useConversationManager";
 import { usePathname } from "next/navigation";
@@ -41,6 +42,8 @@ export function RootSidebar() {
     startEditing,
     handleRename,
   } = useConversationManager();
+
+  const { t } = useLocale();
 
   // logout handler
   const handleLogout = () => {
@@ -69,7 +72,7 @@ export function RootSidebar() {
               onClick={() => setOpenMobile(false)}
               className="text-lg font-semibold hover:bg-muted rounded-md px-2 block"
             >
-              ITRI Intent-Based Chatbot
+              {t("sidebar.title")}
             </Link>
           </div>
         </SidebarMenu>
@@ -79,11 +82,11 @@ export function RootSidebar() {
         <SidebarMenu>
           {conversationList.length === 0 ? (
             <div className="px-2 py-2 text-sm text-muted-foreground">
-              尚無對話紀錄
+              {t("sidebar.no_conversations")}
             </div>
           ) : (
             conversationList.map((c) => {
-              const name = c.conversation_name || "新對話";
+              const name = c.conversation_name || t("sidebar.new_conversation");
               const truncated =
                 name.length > 20 ? name.slice(0, 20) + "..." : name;
               return (
@@ -126,19 +129,19 @@ export function RootSidebar() {
                         onClick={() => startEditing(c)}
                         className="cursor-pointer flex items-center gap-2"
                       >
-                        <Edit3 className="h-4 w-4" /> 重新命名
+                        <Edit3 className="h-4 w-4" /> {t("sidebar.rename")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => openExportDialog(c)}
                         className="cursor-pointer flex items-center gap-2"
                       >
-                        <Download className="h-4 w-4" /> 匯出
+                        <Download className="h-4 w-4" /> {t("sidebar.export")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleDelete(c.conversation_uid)}
                         className="cursor-pointer text-destructive flex items-center gap-2"
                       >
-                        <Trash2 className="h-4 w-4" /> 刪除
+                        <Trash2 className="h-4 w-4" /> {t("sidebar.delete")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -150,12 +153,13 @@ export function RootSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        {/* Language toggle is global in the top-right layout. */}
         <Button
           variant="ghost"
           className="w-full flex items-center gap-2 px-2"
           onClick={handleLogout}
         >
-          <LogOut className="h-4 w-4" /> 登出
+          <LogOut className="h-4 w-4" /> {t("sidebar.logout")}
         </Button>
       </SidebarFooter>
 

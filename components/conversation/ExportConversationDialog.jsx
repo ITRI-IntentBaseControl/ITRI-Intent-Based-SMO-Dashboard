@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getConversationHistory } from "@/app/service/conversation/ExternalService/apiService";
+import { useLocale } from "@/components/LocaleProvider";
 
 /**
  * 匯出對話對話框元件
@@ -24,6 +25,7 @@ import { getConversationHistory } from "@/app/service/conversation/ExternalServi
 export function ExportConversationDialog({ open, onOpenChange, conversation }) {
   const [fileName, setFileName] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const { t } = useLocale();
 
   // 當對話框開啟時，設定預設檔名
   React.useEffect(() => {
@@ -43,11 +45,14 @@ export function ExportConversationDialog({ open, onOpenChange, conversation }) {
   const formatConversationContent = (messages) => {
     return messages
       .map((item) => {
-        const role = item.role === "user" ? "使用者" : "助理";
+        const role =
+          item.role === "user" ? t("role.user") : t("role.assistant");
         const content = Array.isArray(item.text_content)
           ? item.text_content.join("\n")
           : item.text_content;
-        const reward = item.reward ? ` [評價: ${item.reward}]` : "";
+        const reward = item.reward
+          ? ` [${t("role.rating")} : ${item.reward}]`
+          : "";
         return `[${role}]${reward}\n${content}`;
       })
       .join("\n\n" + "=".repeat(50) + "\n\n");
@@ -92,11 +97,11 @@ export function ExportConversationDialog({ open, onOpenChange, conversation }) {
         downloadFile(exportData, `${fileName.trim()}.json`);
         handleClose();
       } else {
-        alert("匯出失敗：" + (result.message || "未知錯誤"));
+        alert(t("export.export_failed") + (result.message || "未知錯誤"));
       }
     } catch (error) {
       console.error("匯出對話失敗:", error);
-      alert("匯出失敗，請稍後再試。");
+      alert(t("export.export_failed_retry"));
     } finally {
       setIsExporting(false);
     }
@@ -106,20 +111,18 @@ export function ExportConversationDialog({ open, onOpenChange, conversation }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>匯出對話</DialogTitle>
-          <DialogDescription>
-            輸入檔案名稱後，對話紀錄將以 JSON 格式下載到您的電腦。
-          </DialogDescription>
+          <DialogTitle>{t("export.title")}</DialogTitle>
+          <DialogDescription>{t("export.description")}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="export-filename">檔案名稱</Label>
+            <Label htmlFor="export-filename">{t("export.filename")}</Label>
             <div className="flex items-center gap-2">
               <Input
                 id="export-filename"
                 value={fileName}
                 onChange={(e) => setFileName(e.target.value)}
-                placeholder="請輸入檔案名稱"
+                placeholder={t("export.placeholder")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !isExporting) {
                     handleExport();
@@ -136,13 +139,13 @@ export function ExportConversationDialog({ open, onOpenChange, conversation }) {
             onClick={handleClose}
             disabled={isExporting}
           >
-            取消
+            {t("export.cancel")}
           </Button>
           <Button
             onClick={handleExport}
             disabled={isExporting || !fileName.trim()}
           >
-            {isExporting ? "匯出中..." : "匯出"}
+            {isExporting ? t("export.exporting") : t("export.export")}
           </Button>
         </DialogFooter>
       </DialogContent>
