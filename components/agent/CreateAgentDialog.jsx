@@ -13,16 +13,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useLocale } from "@/components/LocaleProvider";
 
 export function CreateAgentDialog({ open, onOpenChange, onCreateSuccess }) {
   const [agentName, setAgentName] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useLocale();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!agentName.trim() || !apiKey.trim()) {
-      toast.error("請填寫所有欄位");
+      toast.error(t("agent.please_fill_fields"));
       return;
     }
 
@@ -42,31 +44,29 @@ export function CreateAgentDialog({ open, onOpenChange, onCreateSuccess }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>創建新 Agent</DialogTitle>
-          <DialogDescription>
-            填寫 Agent 名稱和 API Key 來創建新的 Agent
-          </DialogDescription>
+          <DialogTitle>{t("agent.create_title")}</DialogTitle>
+          <DialogDescription>{t("agent.create_description")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="agent-name">Agent 名稱</Label>
+              <Label htmlFor="agent-name">{t("agent.name")}</Label>
               <Input
                 id="agent-name"
                 value={agentName}
                 onChange={(e) => setAgentName(e.target.value)}
-                placeholder="輸入 Agent 名稱"
+                placeholder={t("agent.placeholder_name")}
                 disabled={isSubmitting}
                 autoFocus
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="api-key">API Key</Label>
+              <Label htmlFor="api-key">{t("agent.api_key")}</Label>
               <Input
                 id="api-key"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="輸入 API Key"
+                placeholder={t("agent.placeholder_api_key")}
                 disabled={isSubmitting}
               />
             </div>
@@ -78,10 +78,10 @@ export function CreateAgentDialog({ open, onOpenChange, onCreateSuccess }) {
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              取消
+              {t("agent.cancel")}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "創建中..." : "創建"}
+              {isSubmitting ? t("agent.creating") : t("agent.create")}
             </Button>
           </DialogFooter>
         </form>

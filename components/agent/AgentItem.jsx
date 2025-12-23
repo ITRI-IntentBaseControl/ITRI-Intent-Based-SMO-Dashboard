@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAgentConversation } from "@/app/hooks/agent/useAgentConversation";
 import { createConversation } from "@/app/service/conversation/ExternalService/apiService";
+import { useLocale } from "@/components/LocaleProvider";
 
 export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
   const router = useRouter();
@@ -40,6 +41,7 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
   const [isCreatingConv, setIsCreatingConv] = useState(false);
   const { conversations, loading, error, fetchConversations } =
     useAgentConversation(agent.agent_uid);
+  const { t } = useLocale();
 
   // 當展開時獲取對話列表
   useEffect(() => {
@@ -68,7 +70,7 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
 
     const userUid = localStorage.getItem("user_uid");
     if (!userUid) {
-      alert("無法取得使用者ID，請確認 localStorage 是否已儲存 user_uid。");
+      alert(t("conversation.cannot_get_user_id"));
       return;
     }
 
@@ -103,7 +105,7 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
       }, 3000);
     } catch (err) {
       console.error("Create conversation error:", err);
-      alert("建立對話失敗，請稍後再試。");
+      alert(t("conversation.create_failed"));
     } finally {
       setIsCreatingConv(false);
     }
@@ -150,7 +152,7 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
               size="sm"
             >
               <Plus className="h-4 w-4 mr-1" />
-              新對話
+              {t("conversation.new_button")}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -163,13 +165,13 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
                   onClick={() => onEditAgent(agent)}
                   className="cursor-pointer flex items-center gap-2"
                 >
-                  <Edit3 className="h-4 w-4" /> 編輯
+                  <Edit3 className="h-4 w-4" /> {t("agent.update_title")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setShowDeleteConfirm(true)}
                   className="cursor-pointer text-destructive flex items-center gap-2"
                 >
-                  <Trash2 className="h-4 w-4" /> 刪除
+                  <Trash2 className="h-4 w-4" /> {t("sidebar.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -185,7 +187,7 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
               <textarea
                 value={newConvMsg}
                 onChange={(e) => setNewConvMsg(e.target.value)}
-                placeholder="請輸入訊息..."
+                placeholder={t("conversation.message_placeholder")}
                 className="border rounded-md px-2 py-1 bg-background min-h-[80px]"
                 disabled={isCreatingConv}
                 onKeyDown={(e) => {
@@ -205,7 +207,7 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
                   disabled={isCreatingConv}
                   className="flex-1"
                 >
-                  取消
+                  {t("agent.cancel")}
                 </Button>
                 <Button
                   variant="default"
@@ -213,7 +215,9 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
                   disabled={isCreatingConv || !newConvMsg.trim()}
                   className="flex-1"
                 >
-                  {isCreatingConv ? "建立中..." : "送出"}
+                  {isCreatingConv
+                    ? t("conversation.creating")
+                    : t("conversation.send")}
                 </Button>
               </div>
             </div>
@@ -223,13 +227,13 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
             <>
               {loading ? (
                 <div className="text-gray-500 text-sm py-2">
-                  載入對話列表中...
+                  {t("conversation.loading")}
                 </div>
               ) : error ? (
                 <div className="text-red-500 text-sm py-2">{error}</div>
               ) : conversations.length === 0 ? (
                 <div className="text-gray-500 text-sm py-2">
-                  尚無對話，點擊「新對話」創建第一個對話
+                  {t("conversation.no_conversations_hint")}
                 </div>
               ) : (
                 <ul className="space-y-2">
@@ -243,7 +247,7 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
                       >
                         <MessageSquare className="h-4 w-4 text-gray-500" />
                         <span className="text-sm">
-                          {conv.conversation_name || "未命名對話"}
+                          {conv.conversation_name || t("conversation.unnamed")}
                         </span>
                       </button>
                     </li>
@@ -257,10 +261,11 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>確認刪除 Agent</DialogTitle>
+            <DialogTitle>
+              {t("conversation.confirm_delete_agent_title")}
+            </DialogTitle>
             <DialogDescription>
-              刪除 Agent 會導致所有相關的 Conversation
-              也一併刪除，是否確定要刪除？
+              {t("conversation.confirm_delete_agent_description")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -269,14 +274,16 @@ export function AgentItem({ agent, onEditAgent, onDeleteAgent }) {
               onClick={() => setShowDeleteConfirm(false)}
               disabled={confirmingDelete}
             >
-              取消
+              {t("agent.cancel")}
             </Button>
             <Button
               variant="destructive"
               onClick={handleConfirmDelete}
               disabled={confirmingDelete}
             >
-              {confirmingDelete ? "刪除中..." : "確定刪除"}
+              {confirmingDelete
+                ? t("conversation.deleting")
+                : t("conversation.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
