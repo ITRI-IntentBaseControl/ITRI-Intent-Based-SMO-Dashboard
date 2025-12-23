@@ -14,8 +14,10 @@ import {
 } from "@/app/service/agent/ExternalService/agentService";
 import { useAgentManager } from "@/app/hooks/agent/useAgentManager";
 import { toast } from "sonner";
+import { useLocale } from "@/components/LocaleProvider";
 
 export default function HomePage() {
+  const { t } = useLocale();
   const { agentList, loading, error, refetchAgents } = useAgentManager();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -24,7 +26,7 @@ export default function HomePage() {
   const handleCreateAgent = async (agentName, apiKey) => {
     const userUid = localStorage.getItem("user_uid");
     if (!userUid) {
-      toast.error("無法取得使用者ID");
+      toast.error(t("agent.cannot_get_user_id") || "Cannot get user ID");
       return false;
     }
 
@@ -32,7 +34,7 @@ export default function HomePage() {
       const response = await createAgent(userUid, agentName, apiKey);
 
       if (response?.status_code === 201) {
-        toast.success("成功創建 agent");
+        toast.success(t("agent.create_success") || "Agent created");
 
         // 強制重新呼叫 get_agent_list_metadata API
         await refetchAgents();
@@ -42,12 +44,14 @@ export default function HomePage() {
 
         return true;
       } else {
-        toast.error(response?.message || "創建 Agent 失敗");
+        toast.error(
+          response?.message || t("agent.create_failed") || "Create Agent failed"
+        );
         return false;
       }
     } catch (error) {
       console.error("Failed to create agent:", error);
-      toast.error("創建 Agent 失敗");
+      toast.error(t("agent.create_failed") || "Create Agent failed");
       return false;
     }
   };
@@ -61,7 +65,7 @@ export default function HomePage() {
     try {
       const response = await updateAgent(agentUid, agentName, apiKey);
       if (response?.status_code === 200) {
-        toast.success("成功更新 agent");
+        toast.success(t("agent.update_success") || "Agent updated");
 
         // 重新獲取 agent 列表
         await refetchAgents();
@@ -69,12 +73,14 @@ export default function HomePage() {
         // 返回成功，讓子組件關閉對話框
         return true;
       } else {
-        toast.error(response?.message || "更新 Agent 失敗");
+        toast.error(
+          response?.message || t("agent.update_failed") || "Update Agent failed"
+        );
         return false;
       }
     } catch (error) {
       console.error("Failed to update agent:", error);
-      toast.error("更新 Agent 失敗");
+      toast.error(t("agent.update_failed") || "Update Agent failed");
       return false;
     }
   };
@@ -83,7 +89,7 @@ export default function HomePage() {
     try {
       const response = await deleteAgent(agentUid);
       if (response?.status_code === 200) {
-        toast.success("成功刪除 agent");
+        toast.success(t("agent.delete_success") || "Agent deleted");
         // 重新獲取 agent 列表
         await refetchAgents();
         // 更新側邊欄的對話列表（因為相關對話已被刪除）
@@ -93,27 +99,31 @@ export default function HomePage() {
           window.dispatchEvent(new Event("updateConversationList"));
         }, 1500);
       } else {
-        toast.error(response?.message || "刪除 Agent 失敗");
+        toast.error(
+          response?.message || t("agent.delete_failed") || "Delete Agent failed"
+        );
       }
     } catch (error) {
       console.error("Failed to delete agent:", error);
-      toast.error("刪除 Agent 失敗");
+      toast.error(t("agent.delete_failed") || "Delete Agent failed");
     }
   };
 
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <ConversationHeader title="Agent Select" />
+      <ConversationHeader title={t("agent.select_title") || "Agent Select"} />
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-4xl mx-auto">
           <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold mb-2">選擇 Agent</h1>
+              <h1 className="text-2xl font-bold mb-2">
+                {t("agent.select_heading")}
+              </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                選擇一個 Agent 來查看對話或創建新對話
+                {t("agent.select_description")}
               </p>
             </div>
             <Button
@@ -121,22 +131,24 @@ export default function HomePage() {
               className="shrink-0"
             >
               <Plus className="h-4 w-4 mr-2" />
-              創建 Agent
+              {t("agent.create")}
             </Button>
           </div>
 
           {/* Agent List */}
           {loading ? (
             <div className="flex items-center justify-center p-8">
-              <div className="text-gray-500">載入 Agent 列表中...</div>
+              <div className="text-gray-500">{t("agent.loading")}</div>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center p-8">
-              <div className="text-red-500">錯誤: {error}</div>
+              <div className="text-red-500">
+                {t("agent.error_prefix")} {error}
+              </div>
             </div>
           ) : agentList.length === 0 ? (
             <div className="flex items-center justify-center p-8">
-              <div className="text-gray-500">尚無可用的 Agent</div>
+              <div className="text-gray-500">{t("agent.no_agents")}</div>
             </div>
           ) : (
             <div className="space-y-4">

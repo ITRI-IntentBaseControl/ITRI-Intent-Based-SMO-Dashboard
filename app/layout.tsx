@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Toaster } from "sonner";
 
 import { ThemeProvider } from "@/components/theme-provider";
+import { LocaleProvider } from "@/components/LocaleProvider";
 // import Providers from "@/components/chat-provider";
 import "./globals.css";
+import { LanguageToggle } from "@/components/LanguageToggle";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://chat.vercel.ai"),
@@ -56,15 +58,20 @@ export default async function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Toaster position="top-center" />
-          {children}
-        </ThemeProvider>
+        <LocaleProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="fixed top-2 right-3 z-50">
+              <LanguageToggle />
+            </div>
+            <Toaster position="top-center" />
+            {children}
+          </ThemeProvider>
+        </LocaleProvider>
       </body>
     </html>
   );
