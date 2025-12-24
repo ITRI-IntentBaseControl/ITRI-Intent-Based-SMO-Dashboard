@@ -30,6 +30,7 @@
     "delete_success": "成功刪除 agent",
     "delete_failed": "刪除 Agent 失敗",
     "select_title": "Agent 選擇",
+    "select_required_full": "請先選擇一個 Agent，才能開始新的對話。",
     "select_heading": "選擇 Agent",
     "select_description": "選擇一個 Agent 來查看或創建對話",
     "create": "創建 Agent",
@@ -39,7 +40,8 @@
     "api_key_optional_label": "API Key（選填）",
     "api_key_edit_placeholder": "輸入新的 API Key（留空則不更新）",
     "update": "更新",
-    "updating": "更新中..."
+    "updating": "更新中...",
+    "management_center": "管理中心"
   },
   "export": {
     "title": "匯出對話",

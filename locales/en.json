@@ -30,6 +30,7 @@
     "delete_success": "Agent deleted",
     "delete_failed": "Delete Agent failed",
     "select_title": "Agent Select",
+    "select_required_full": "Please select an agent before starting a new conversation.",
     "select_heading": "Select an Agent",
     "select_description": "Choose an Agent to view or create conversations",
     "create": "Create Agent",
@@ -39,7 +40,8 @@
     "api_key_optional_label": "API Key (optional)",
     "api_key_edit_placeholder": "Enter new API Key (leave blank to keep current)",
     "update": "Update",
-    "updating": "Updating..."
+    "updating": "Updating...",
+    "management_center": "Management Center"
   },
   "export": {
     "title": "Export Conversation",

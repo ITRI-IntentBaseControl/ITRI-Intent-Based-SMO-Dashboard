@@ -68,7 +68,7 @@ export function RootSidebar() {
         <SidebarMenu>
           <div className="px-2 py-1">
             <Link
-              href="/"
+              href="/agent"
               onClick={() => setOpenMobile(false)}
               className="text-lg font-semibold hover:bg-muted rounded-md px-2 block"
             >
