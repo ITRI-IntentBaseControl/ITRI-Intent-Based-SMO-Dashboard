@@ -13,6 +13,7 @@ import {
 
 import { useRouter } from "next/navigation";
 import { Sun, Moon } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 export function ConversationHeader() {
   const router = useRouter();
 
@@ -23,6 +24,7 @@ export function ConversationHeader() {
 
   const isDark = mounted ? resolvedTheme === "dark" : true; // 初始先假設為 dark，避免抖動
   const nextTheme = isDark ? "light" : "dark";
+  const { t } = useLocale();
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
@@ -39,10 +41,10 @@ export function ConversationHeader() {
             }}
           >
             <PlusIcon />
-            <span className="md:sr-only">New Chat</span>
+            <span className="md:sr-only">{t("conversation.new_button")}</span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent>New Chat</TooltipContent>
+        <TooltipContent>{t("conversation.new_button")}</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -64,10 +66,14 @@ export function ConversationHeader() {
             )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{`Switch to ${
-          nextTheme === "dark" ? "Dark" : "Light"
-        } Mode`}</TooltipContent>
+        <TooltipContent>
+          {nextTheme === "dark"
+            ? t("ui.switch_to_dark")
+            : t("ui.switch_to_light")}
+        </TooltipContent>
       </Tooltip>
+
+      {/* Language toggle is global in the top-right layout. */}
     </header>
   );
 }

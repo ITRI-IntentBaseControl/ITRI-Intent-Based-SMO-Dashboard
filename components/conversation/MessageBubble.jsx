@@ -4,6 +4,7 @@ import { SparklesIcon } from "@/components/icons";
 import { AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { RenderDynamicContent } from "./RenderDynamicContent";
+import { useLocale } from "@/components/LocaleProvider";
 
 /**
  * 顏色改為使用 shadcn/tailwind 的語義化 token，
@@ -11,9 +12,24 @@ import { RenderDynamicContent } from "./RenderDynamicContent";
  * 這些會跟隨 next-themes 的黑/白主題自動切換，不再硬寫 bg-gray-300 / bg-zinc-900。
  */
 export function MessageBubble({ msg, onSelectOption, conversationId }) {
-  const { role, text_content, isError } = msg;
+  const { role, text_content, isError, isThinking } = msg;
+  const { t } = useLocale();
   const isUser = role === "user";
   const isAssistant = role === "llm";
+
+  // 計時器：僅在 thinking 狀態下啟動
+  const [thinkingSeconds, setThinkingSeconds] = React.useState(0);
+  React.useEffect(() => {
+    if (isAssistant && isThinking) {
+      setThinkingSeconds(0);
+      const timer = setInterval(() => {
+        setThinkingSeconds((s) => s + 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    } else {
+      setThinkingSeconds(0);
+    }
+  }, [isAssistant, isThinking]);
 
   // 共用 class：泡泡樣式
   const bubbleBase =
@@ -35,10 +51,11 @@ export function MessageBubble({ msg, onSelectOption, conversationId }) {
     bubbleStyle = "max-w-[80%] bg-background text-foreground ring-border";
   }
 
-  // 「思考中」的佔位
+  // 「思考中」的佔位，帶計時效果
   const thinking = (
-    <p className="rounded-lg px-3 py-2 italic text-center text-muted-foreground">
-      Thinking…
+    <p className="rounded-lg px-3 py-2 italic text-center text-muted-foreground flex items-center gap-2">
+      {t("render.thinking")}
+      <span>... {thinkingSeconds}s</span>
     </p>
   );
 
@@ -75,7 +92,7 @@ export function MessageBubble({ msg, onSelectOption, conversationId }) {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold"></span>
                     {/* 假設錯誤內容在第一個 text_content 中 */}
-                    {text_content[0]?.content || "發生未知錯誤"}
+                    {text_content[0]?.content || t("message.unknown_error")}
                   </div>
                 ) : (
                   <RenderDynamicContent

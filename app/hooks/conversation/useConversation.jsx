@@ -222,7 +222,17 @@ export function useConversation(conversationId) {
     if (initMsg) {
       setIsSending(true);
       setHasStreamStarted(false);
-      setChatMessages((prev) => [...prev, { role: "user", content: initMsg }]);
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "user", content: initMsg },
+        {
+          role: "llm",
+          content: "Thinking…",
+          text_content: [],
+          isThinking: true,
+          retry: "0",
+        },
+      ]);
       sendMessage(initMsg);
       localStorage.removeItem(key);
     }
