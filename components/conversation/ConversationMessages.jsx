@@ -4,6 +4,7 @@
 import React, { useEffect, useRef } from "react";
 import { ThumbsUp, ThumbsDown, RefreshCw } from "lucide-react";
 import { MessageBubble } from "./MessageBubble";
+import { useLocale } from "@/components/LocaleProvider";
 
 export function ConversationMessages({
   chatMessages,
@@ -14,6 +15,7 @@ export function ConversationMessages({
 }) {
   const containerRef = useRef(null);
   const bottomRef = useRef(null);
+  const { t } = useLocale();
 
   // 追蹤每組 user+llm 訊息目前顯示的版本索引
   // key: userMessageIndex, value: selectedVersionIndex
@@ -237,6 +239,7 @@ function RewardButtons({
   currentReward,
   onRewardChange,
 }) {
+  const { t } = useLocale();
   const [pending, setPending] = React.useState(false);
   // 直接使用 currentReward，不需要內部狀態，因為父組件會管理
   const reward = currentReward;
@@ -287,7 +290,7 @@ function RewardButtons({
         } hover:bg-sky-50 hover:text-sky-700`}
         onClick={() => handleReward("good")}
         disabled={pending}
-        title="讚"
+        title={t("conversation.reward_good_title")}
       >
         <ThumbsUp className="h-3.5 w-3.5" />
       </button>
@@ -299,7 +302,7 @@ function RewardButtons({
         } hover:bg-rose-50 hover:text-rose-700`}
         onClick={() => handleReward("bad")}
         disabled={pending}
-        title="爛"
+        title={t("conversation.reward_bad_title")}
       >
         <ThumbsDown className="h-3.5 w-3.5" />
       </button>
@@ -308,6 +311,7 @@ function RewardButtons({
 }
 
 function RegenerateButton() {
+  const { t } = useLocale();
   const handleRegenerate = () => {
     window.dispatchEvent(new CustomEvent("conversation:regenerate"));
   };
@@ -315,7 +319,7 @@ function RegenerateButton() {
     <button
       className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md ring-1 bg-background text-foreground ring-border hover:bg-accent"
       onClick={handleRegenerate}
-      title="重新生成"
+      title={t("conversation.regenerate")}
     >
       <RefreshCw className="h-3.5 w-3.5" />
     </button>
@@ -324,6 +328,7 @@ function RegenerateButton() {
 
 // 版本切換器組件
 function VersionSwitcher({ currentVersion, totalVersions, onVersionChange }) {
+  const { t } = useLocale();
   const handlePrev = () => {
     if (currentVersion > 1) {
       onVersionChange(currentVersion - 2);
@@ -342,7 +347,7 @@ function VersionSwitcher({ currentVersion, totalVersions, onVersionChange }) {
         onClick={handlePrev}
         disabled={currentVersion === 1}
         className="hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
-        title="上一個版本"
+        title={t("conversation.prev_version")}
       >
         ←
       </button>
@@ -353,7 +358,7 @@ function VersionSwitcher({ currentVersion, totalVersions, onVersionChange }) {
         onClick={handleNext}
         disabled={currentVersion === totalVersions}
         className="hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
-        title="下一個版本"
+        title={t("conversation.next_version")}
       >
         →
       </button>

@@ -6,9 +6,11 @@ import {
   getAgentConversationList,
   createAgentConversation,
 } from "../../service/agent/ExternalService/agentService";
+import { useLocale } from "@/components/LocaleProvider";
 
 export function useAgentConversation(agentUid) {
   const router = useRouter();
+  const { t } = useLocale();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -36,11 +38,17 @@ export function useAgentConversation(agentUid) {
         if (data?.status_code === 200 && data.data) {
           setConversations(data.data);
         } else {
-          setError(data?.message || "Failed to fetch conversations");
+          setError(
+            data?.message ||
+              t("conversation.create_failed") ||
+              "Failed to fetch conversations"
+          );
         }
       } catch (err) {
         console.error("[useAgentConversation] Error:", err);
-        setError("Failed to fetch conversations");
+        setError(
+          t("conversation.create_failed") || "Failed to fetch conversations"
+        );
       } finally {
         if (!silent) {
           setLoading(false);
@@ -70,12 +78,18 @@ export function useAgentConversation(agentUid) {
         await fetchConversations();
         return data.data.conversation_uid;
       } else {
-        setError(data?.message || "Failed to create conversation");
+        setError(
+          data?.message ||
+            t("conversation.create_failed") ||
+            "Failed to create conversation"
+        );
         return null;
       }
     } catch (err) {
       console.error("[useAgentConversation] Error:", err);
-      setError("Failed to create conversation");
+      setError(
+        t("conversation.create_failed") || "Failed to create conversation"
+      );
       return null;
     } finally {
       setCreating(false);

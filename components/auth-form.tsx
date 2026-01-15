@@ -2,6 +2,7 @@
 import Form from "next/form";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { useLocale } from "@/components/LocaleProvider";
 
 export function AuthForm({
   action,
@@ -14,6 +15,7 @@ export function AuthForm({
   children: React.ReactNode;
   variant?: "signin" | "signup";
 }) {
+  const { t } = useLocale();
   return (
     <Form action={action} className="flex flex-col gap-4 px-4 sm:px-16">
       {variant === "signin" ? (
@@ -24,14 +26,14 @@ export function AuthForm({
               htmlFor="username"
               className="text-zinc-600 font-normal dark:text-zinc-400"
             >
-              Username
+              {t("auth.username")}
             </Label>
             <Input
               id="username"
               name="username"
               className="bg-muted text-md md:text-sm"
               type="text"
-              placeholder="User Name"
+              placeholder={t("auth.user_placeholder")}
               required
               autoFocus
             />
@@ -42,7 +44,7 @@ export function AuthForm({
               htmlFor="password"
               className="text-zinc-600 font-normal dark:text-zinc-400"
             >
-              Password
+              {t("auth.password")}
             </Label>
             <Input
               id="password"
@@ -61,14 +63,14 @@ export function AuthForm({
               htmlFor="username"
               className="text-zinc-600 font-normal dark:text-zinc-400"
             >
-              Username
+              {useLocale().t("auth.username")}
             </Label>
             <Input
               id="username"
               name="username"
               className="bg-muted text-md md:text-sm"
               type="text"
-              placeholder="User Name"
+              placeholder={t("auth.user_placeholder")}
               required
               autoFocus
             />
@@ -79,14 +81,14 @@ export function AuthForm({
               htmlFor="email"
               className="text-zinc-600 font-normal dark:text-zinc-400"
             >
-              Email
+              {t("auth.email")}
             </Label>
             <Input
               id="email"
               name="email"
               className="bg-muted text-md md:text-sm"
               type="email"
-              placeholder="user@example.com"
+              placeholder={t("auth.email_placeholder")}
               required
             />
           </div>
@@ -96,7 +98,7 @@ export function AuthForm({
               htmlFor="password"
               className="text-zinc-600 font-normal dark:text-zinc-400"
             >
-              Password
+              {t("auth.password")}
             </Label>
             <Input
               id="password"
