@@ -6,7 +6,7 @@ import Script from "next/script";
 export const experimental_ppr = true;
 
 export default async function Layout({ children }) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const isCollapsed = cookieStore.get("sidebar:state")?.value !== "true";
 
   return (

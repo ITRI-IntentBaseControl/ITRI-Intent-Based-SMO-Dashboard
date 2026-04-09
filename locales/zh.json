@@ -127,6 +127,17 @@
     "thinking": "思考中..."
   },
 
+  "voice": {
+    "start_recording": "開始錄音",
+    "stop_recording": "停止錄音",
+    "recording": "錄音中...",
+    "transcribing": "語音辨識中...",
+    "mic_denied": "請在瀏覽器設定中允許麥克風權限",
+    "too_short": "錄音時間太短，請至少錄 1 秒",
+    "upload_failed": "語音上傳失敗，請重試",
+    "transcribe_failed": "語音辨識失敗，請重試或手動輸入"
+  },
+
   "ui": {
     "toggle_sidebar": "切換側邊欄",
     "switch_to_light": "切換到淺色模式",

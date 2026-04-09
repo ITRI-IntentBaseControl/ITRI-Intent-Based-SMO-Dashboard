@@ -115,6 +115,52 @@ export async function createConversation(user_uid, agent_uid = null) {
   return response.data;
 }
 
+/**
+ * 上傳圖片到後端
+ * @param {string} conversationUid
+ * @param {File} file - PNG 圖片檔案
+ * @returns {{ status_code, message, data: { image_uid } }}
+ */
+export async function uploadImage(conversationUid, file) {
+  try {
+    const formData = new FormData();
+    formData.append("conversation_uid", conversationUid);
+    formData.append("image", file);
+
+    const response = await postAPI(
+      "conversation_mgt/ImageManager/upload_image",
+      formData,
+      { isUpload: true }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("[uploadImage] API Error:", error);
+    throw error;
+  }
+}
+
+/**
+ * 語音轉文字
+ * @param {Blob} speechBlob - webm 格式音檔
+ * @returns {{ status_code, message, data: { text } }}
+ */
+export async function transcribeSpeech(speechBlob) {
+  try {
+    const formData = new FormData();
+    formData.append("speech", speechBlob, "speech.webm");
+
+    const response = await postAPI(
+      "conversation_mgt/SpeechManager/transcribe",
+      formData,
+      { isUpload: true }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("[transcribeSpeech] API Error:", error);
+    throw error;
+  }
+}
+
 /** 取得對話照片 */
 export async function getImage(conversationUid, imageUid) {
   try {

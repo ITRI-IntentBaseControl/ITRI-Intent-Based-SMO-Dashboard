@@ -22,7 +22,10 @@ export function useConversation(conversationId) {
         // 先將每個訊息轉換成標準格式
         const rawMessages = data.map((item) => {
           const contentStr =
-            item.text_content?.map((t) => t.content).join("\n") || "";
+            item.text_content
+              ?.filter((t) => t.type !== "image")
+              .map((t) => t.content)
+              .join("\n") || "";
           const isErrorHistory =
             item.isError === true ||
             String(item.event_type) === "0" ||
@@ -218,13 +221,32 @@ export function useConversation(conversationId) {
     if (didAutoSend) return;
 
     const key = `init_msg_${conversationId}`;
+    const imgKey = `init_images_${conversationId}`;
     const initMsg = localStorage.getItem(key);
     if (initMsg) {
+      // 讀取暫存的圖片 UIDs
+      let imageUids = [];
+      const imgData = localStorage.getItem(imgKey);
+      if (imgData) {
+        try {
+          imageUids = JSON.parse(imgData);
+        } catch (e) {
+          console.error("[handleAutoSend] Failed to parse init_images:", e);
+        }
+      }
+
       setIsSending(true);
       setHasStreamStarted(false);
+
+      // 組裝 text_content（含圖片）
+      const textContent = [{ type: "message", content: initMsg }];
+      for (const uid of imageUids) {
+        textContent.push({ type: "image", content: uid });
+      }
+
       setChatMessages((prev) => [
         ...prev,
-        { role: "user", content: initMsg },
+        { role: "user", content: initMsg, text_content: textContent, retry: "0" },
         {
           role: "llm",
           content: "Thinking…",
@@ -233,17 +255,18 @@ export function useConversation(conversationId) {
           retry: "0",
         },
       ]);
-      sendMessage(initMsg);
+      sendMessage(initMsg, "0", imageUids);
       localStorage.removeItem(key);
+      localStorage.removeItem(imgKey);
     }
     setDidAutoSend(true);
   }
 
-  function handleSendMessage(msg, retry = "0", isRegenerate = false) {
+  function handleSendMessage(msg, retry = "0", isRegenerate = false, imageUids = []) {
     if (isSending) return;
     setIsSending(true);
     setHasStreamStarted(false);
-    //目前先暫訂send的全都是string，之後有圖片再改
+
     if (msg && typeof msg !== "string") {
       msg = inputValue;
     }
@@ -251,11 +274,19 @@ export function useConversation(conversationId) {
     if (!content) return;
     setInputValue("");
 
+    // 組裝 text_content（含圖片）供歷史紀錄和重傳使用
+    const textContent = [{ type: "message", content }];
+    if (imageUids && imageUids.length > 0) {
+      for (const uid of imageUids) {
+        textContent.push({ type: "image", content: uid });
+      }
+    }
+
     // 如果不是重新生成，才添加新的 user 訊息
     if (!isRegenerate) {
       setChatMessages((prev) => [
         ...prev,
-        { role: "user", content, retry: String(retry) },
+        { role: "user", content, text_content: textContent, retry: String(retry) },
       ]);
     }
 
@@ -271,18 +302,17 @@ export function useConversation(conversationId) {
       },
     ]);
 
-    sendMessage(content, String(retry));
+    sendMessage(content, String(retry), imageUids);
   }
 
-  function sendMessage(content, retry = "0") {
+  function sendMessage(content, retry = "0", imageUids = []) {
     if (!wsServiceRef.current) return;
-
-    //顯示Thinking...效果，不加入訊息隊列
 
     const payload = outboundMessageDecorator(
       content,
       conversationId,
-      String(retry)
+      String(retry),
+      imageUids
     );
     wsServiceRef.current.send(payload);
   }

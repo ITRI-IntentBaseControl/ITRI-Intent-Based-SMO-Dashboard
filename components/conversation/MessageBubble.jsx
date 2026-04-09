@@ -78,7 +78,18 @@ export function MessageBubble({ msg, onSelectOption, conversationId }) {
 
         {/* 泡泡本體：依使用者/助理套不同語義色 */}
         <div className={`${bubbleBase} ${bubbleStyle}`}>
-          {isUser && <p>{msg.content}</p>}
+          {isUser && (
+            <>
+              <p>{msg.content}</p>
+              {/* 顯示 user 訊息中的圖片 */}
+              {text_content && text_content.filter((t) => t.type === "image").length > 0 && (
+                <RenderDynamicContent
+                  data={text_content.filter((t) => t.type === "image")}
+                  conversationId={conversationId}
+                />
+              )}
+            </>
+          )}
 
           {isAssistant &&
             (isError || (text_content && text_content.length > 0) ? (
