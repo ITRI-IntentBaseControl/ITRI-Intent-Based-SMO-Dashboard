@@ -5,6 +5,7 @@ import { AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { RenderDynamicContent } from "./RenderDynamicContent";
 import { useLocale } from "@/components/LocaleProvider";
+import { getAudioUrl } from "@/app/service/conversation/ExternalService/apiService";
 
 /**
  * 顏色改為使用 shadcn/tailwind 的語義化 token，
@@ -87,6 +88,21 @@ export function MessageBubble({ msg, onSelectOption, conversationId }) {
                   data={text_content.filter((t) => t.type === "image")}
                   conversationId={conversationId}
                 />
+              )}
+              {/* 顯示 user 訊息中的音訊 */}
+              {text_content && text_content.filter((t) => t.type === "audio").length > 0 && (
+                <div className="flex flex-col gap-1 mt-1">
+                  {text_content
+                    .filter((t) => t.type === "audio")
+                    .map((t, i) => (
+                      <audio
+                        key={i}
+                        src={getAudioUrl(t.content)}
+                        controls
+                        className="h-8 w-48"
+                      />
+                    ))}
+                </div>
               )}
             </>
           )}

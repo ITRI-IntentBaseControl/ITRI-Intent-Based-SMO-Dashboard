@@ -39,7 +39,7 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
     let objectUrl: string | null = null;
 
     const fetchAndSetImage = async () => {
-      if (!conversationId || !imageId) {
+      if (!imageId) {
         setError(t("render.image_missing_ids"));
         setIsLoading(false);
         return;
@@ -49,12 +49,27 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
       setError(null);
 
       try {
-        const imageBlob = await getImage(conversationId, imageId);
-        if (imageBlob) {
-          objectUrl = URL.createObjectURL(imageBlob);
+        // 若 imageId 是完整 URL（Dify tool 回傳的圖片），直接 fetch 後轉 blob
+        if (imageId.startsWith("http://") || imageId.startsWith("https://")) {
+          const resp = await fetch(imageId);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const blob = await resp.blob();
+          objectUrl = URL.createObjectURL(blob);
           setImageUrl(objectUrl);
         } else {
-          setError(t("render.image_failed_retrieve"));
+          // 否則視為 image UID，從後端 API 取得
+          if (!conversationId) {
+            setError(t("render.image_missing_ids"));
+            setIsLoading(false);
+            return;
+          }
+          const imageBlob = await getImage(conversationId, imageId);
+          if (imageBlob) {
+            objectUrl = URL.createObjectURL(imageBlob);
+            setImageUrl(objectUrl);
+          } else {
+            setError(t("render.image_failed_retrieve"));
+          }
         }
       } catch (err: any) {
         console.error("Error fetching image in component:", err);
@@ -72,7 +87,6 @@ const ConversationImageBlock: React.FC<ConversationImageBlockProps> = ({
     return () => {
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
-        // console.log(`Released Blob URL: ${objectUrl}`);
       }
     };
   }, [conversationId, imageId]);

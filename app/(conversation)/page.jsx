@@ -7,6 +7,7 @@ import { ConversationInput } from "@/components/conversation/ConversationInput";
 import {
   createConversation,
   uploadImage,
+  uploadAudio,
 } from "@/app/service/conversation/ExternalService/apiService";
 import { toast } from "sonner";
 import { useLocale } from "@/components/LocaleProvider";
@@ -21,6 +22,8 @@ export default function HomePage() {
 
   // 新對話頁的圖片暫存（尚未有 conversation_uid，只存 File 物件）
   const [pendingFiles, setPendingFiles] = useState([]); // [{ file, previewUrl }]
+  // 新對話頁的音訊暫存（尚未有 conversation_uid，只存 Blob 物件）
+  const [pendingAudioFiles, setPendingAudioFiles] = useState([]); // [{ blob, blobUrl }]
 
   // Auto-select agent from localStorage
   useEffect(() => {
@@ -31,10 +34,11 @@ export default function HomePage() {
     }
   }, []);
 
-  // 清理 preview URLs
+  // 清理 preview/blob URLs
   useEffect(() => {
     return () => {
       pendingFiles.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+      pendingAudioFiles.forEach((a) => URL.revokeObjectURL(a.blobUrl));
     };
   }, []);
 
@@ -53,11 +57,32 @@ export default function HomePage() {
     });
   }, []);
 
+  // 新對話頁的音訊「上傳」只是暫存 Blob，不呼叫後端
+  const handleUploadAudio = useCallback(async (blob) => {
+    const blobUrl = URL.createObjectURL(blob);
+    setPendingAudioFiles((prev) => [...prev, { blob, blobUrl }]);
+    return null;
+  }, []);
+
+  const handleRemoveAudio = useCallback((index) => {
+    setPendingAudioFiles((prev) => {
+      const removed = prev[index];
+      if (removed?.blobUrl) URL.revokeObjectURL(removed.blobUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  }, []);
+
   // 將 pendingFiles 轉成 ConversationInput 期望的格式
   const pendingImages = pendingFiles.map((p) => ({
     file: p.file,
     imageUid: null,
     previewUrl: p.previewUrl,
+  }));
+
+  // 將 pendingAudioFiles 轉成 ConversationInput 期望的格式
+  const pendingAudios = pendingAudioFiles.map((a) => ({
+    audioUid: null,
+    blobUrl: a.blobUrl,
   }));
 
   const handleSendMessage = async (message) => {
@@ -92,7 +117,20 @@ export default function HomePage() {
         }
       }
 
-      // 3. 暫存訊息和圖片 UIDs 到 localStorage
+      // 2.5. 上傳暫存的音訊
+      const audioUids = [];
+      for (const { blob } of pendingAudioFiles) {
+        try {
+          const result = await uploadAudio(conversationUid, blob);
+          if (result?.status_code === 201 && result?.data?.audio_uid) {
+            audioUids.push(result.data.audio_uid);
+          }
+        } catch (err) {
+          console.error("Failed to upload audio:", err);
+        }
+      }
+
+      // 3. 暫存訊息和檔案 UIDs 到 localStorage
       if (message && message.trim()) {
         localStorage.setItem(`init_msg_${conversationUid}`, message);
       }
@@ -100,6 +138,12 @@ export default function HomePage() {
         localStorage.setItem(
           `init_images_${conversationUid}`,
           JSON.stringify(imageUids)
+        );
+      }
+      if (audioUids.length > 0) {
+        localStorage.setItem(
+          `init_audios_${conversationUid}`,
+          JSON.stringify(audioUids)
         );
       }
 
@@ -139,6 +183,9 @@ export default function HomePage() {
             onUploadImage={handleUploadImage}
             pendingImages={pendingImages}
             onRemoveImage={handleRemoveImage}
+            onUploadAudio={handleUploadAudio}
+            pendingAudios={pendingAudios}
+            onRemoveAudio={handleRemoveAudio}
           />
         </div>
       </div>
