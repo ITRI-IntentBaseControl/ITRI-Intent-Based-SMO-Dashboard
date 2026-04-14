@@ -85,4 +85,4 @@ const handleApiError = (error: any) => {
   }
 };
 
-export { PROTOCAL, HOST, API_PORT, postAPI, downloadPDF };
+export { PROTOCAL, HOST, API_PORT, API, postAPI, downloadPDF };

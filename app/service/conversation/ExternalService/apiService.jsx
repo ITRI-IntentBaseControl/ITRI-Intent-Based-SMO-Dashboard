@@ -1,6 +1,6 @@
 "use client";
 
-import { postAPI } from "@/app/utils/entrypoint";
+import { API, postAPI } from "@/app/utils/entrypoint";
 
 /** 取得指定使用者的對話列表 */
 export async function getConversationList(userUid) {
@@ -140,25 +140,36 @@ export async function uploadImage(conversationUid, file) {
 }
 
 /**
- * 語音轉文字
- * @param {Blob} speechBlob - webm 格式音檔
- * @returns {{ status_code, message, data: { text } }}
+ * 上傳音檔到後端
+ * @param {string} conversationUid
+ * @param {Blob} audioBlob - webm 格式音檔
+ * @returns {{ status_code, message, data: { audio_uid } }}
  */
-export async function transcribeSpeech(speechBlob) {
+export async function uploadAudio(conversationUid, audioBlob) {
   try {
     const formData = new FormData();
-    formData.append("speech", speechBlob, "speech.webm");
+    formData.append("conversation_uid", conversationUid);
+    formData.append("audio", audioBlob, "audio.webm");
 
     const response = await postAPI(
-      "conversation_mgt/SpeechManager/transcribe",
+      "conversation_mgt/AudioManager/upload_audio",
       formData,
       { isUpload: true }
     );
     return response.data;
   } catch (error) {
-    console.error("[transcribeSpeech] API Error:", error);
+    console.error("[uploadAudio] API Error:", error);
     throw error;
   }
+}
+
+/**
+ * 取得音檔播放 URL（GET endpoint，可直接作為 <audio src> 使用）
+ * @param {string} audioUid
+ * @returns {string}
+ */
+export function getAudioUrl(audioUid) {
+  return `${API}/conversation_mgt/AudioManager/get_audio/${audioUid}`;
 }
 
 /** 取得對話照片 */

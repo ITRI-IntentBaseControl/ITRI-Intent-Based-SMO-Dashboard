@@ -30,20 +30,27 @@ export function inboundMessageDecorator(rawData) {
  * @param {string} conversation_uid - 對話 UID
  * @param {string|number} retry - 重試次數，預設為 "0"（字串格式）
  * @param {string[]} imageUids - 已上傳的圖片 UID 陣列（可選）
+ * @param {string[]} audioUids - 已上傳的音檔 UID 陣列（可選）
  * @returns {object}
  */
 export function outboundMessageDecorator(
   content,
   conversation_uid,
   retry = "0",
-  imageUids = []
+  imageUids = [],
+  audioUids = []
 ) {
   const text_content = [{ type: "message", content }];
 
-  // 將圖片 UID 加入 text_content
   if (imageUids && imageUids.length > 0) {
     for (const uid of imageUids) {
       text_content.push({ type: "image", content: uid });
+    }
+  }
+
+  if (audioUids && audioUids.length > 0) {
+    for (const uid of audioUids) {
+      text_content.push({ type: "audio", content: uid });
     }
   }
 
