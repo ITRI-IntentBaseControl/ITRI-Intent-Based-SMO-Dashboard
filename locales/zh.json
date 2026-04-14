@@ -131,11 +131,12 @@
     "start_recording": "開始錄音",
     "stop_recording": "停止錄音",
     "recording": "錄音中...",
-    "transcribing": "語音辨識中...",
     "mic_denied": "請在瀏覽器設定中允許麥克風權限",
+    "mic_not_found": "找不到麥克風裝置，請確認裝置已連接",
     "too_short": "錄音時間太短，請至少錄 1 秒",
     "upload_failed": "語音上傳失敗，請重試",
-    "transcribe_failed": "語音辨識失敗，請重試或手動輸入"
+    "uploading": "上傳中...",
+    "audio_clip": "音訊片段"
   },
 
   "ui": {

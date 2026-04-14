@@ -131,11 +131,12 @@
     "start_recording": "Start recording",
     "stop_recording": "Stop recording",
     "recording": "Recording...",
-    "transcribing": "Transcribing...",
     "mic_denied": "Please allow microphone permission in browser settings",
+    "mic_not_found": "No microphone device found, please check your device is connected",
     "too_short": "Recording too short, please record at least 1 second",
     "upload_failed": "Voice upload failed, please retry",
-    "transcribe_failed": "Transcription failed, please retry or type manually"
+    "uploading": "Uploading...",
+    "audio_clip": "Audio clip"
   },
 
   "ui": {
