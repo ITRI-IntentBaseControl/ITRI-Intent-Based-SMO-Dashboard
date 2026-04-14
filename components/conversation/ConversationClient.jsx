@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import { ConversationHeader } from "./ConversationHeader";
 import { ConversationInput } from "./ConversationInput";
 import { ConversationMessages } from "./ConversationMessages";
-import { uploadImage } from "@/app/service/conversation/ExternalService/apiService";
+import { uploadImage, uploadAudio } from "@/app/service/conversation/ExternalService/apiService";
 
 // 從自訂 hook 匯入
 import { useConversation } from "../../app/hooks/conversation/useConversation";
@@ -25,6 +25,8 @@ export default function ConversationClient({ conversationId }) {
 
   // 圖片上傳狀態：[{ file, imageUid, previewUrl }]
   const [pendingImages, setPendingImages] = useState([]);
+  // 音訊上傳狀態：[{ audioUid, blobUrl }]
+  const [pendingAudios, setPendingAudios] = useState([]);
 
   const handleUploadImage = useCallback(async (file) => {
     const previewUrl = URL.createObjectURL(file);
@@ -48,21 +50,50 @@ export default function ConversationClient({ conversationId }) {
     });
   }, []);
 
-  // 包裝 onSend：送出時帶上圖片 UIDs，送出後清空圖片
-  const handleSendWithImages = useCallback((msg, retry = "0", isRegenerate = false, imageUids = []) => {
-    // 如果不是重傳且有暫存圖片，使用暫存圖片的 UIDs
-    const uids = !isRegenerate && pendingImages.length > 0
+  const handleUploadAudio = useCallback(async (blob) => {
+    const blobUrl = URL.createObjectURL(blob);
+    const result = await uploadAudio(conversationId, blob);
+    if (result?.status_code === 201 && result?.data?.audio_uid) {
+      setPendingAudios((prev) => [
+        ...prev,
+        { audioUid: result.data.audio_uid, blobUrl },
+      ]);
+      return result.data.audio_uid;
+    }
+    URL.revokeObjectURL(blobUrl);
+    throw new Error(result?.message || "Audio upload failed");
+  }, [conversationId]);
+
+  const handleRemoveAudio = useCallback((index) => {
+    setPendingAudios((prev) => {
+      const removed = prev[index];
+      if (removed?.blobUrl) URL.revokeObjectURL(removed.blobUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  }, []);
+
+  // 包裝 onSend：送出時帶上圖片與音訊 UIDs，送出後清空
+  const handleSendWithImages = useCallback((msg, retry = "0", isRegenerate = false, imageUids = [], audioUids = []) => {
+    const finalImageUids = !isRegenerate && pendingImages.length > 0
       ? pendingImages.map((img) => img.imageUid)
       : imageUids;
-    handleSendMessage(msg, retry, isRegenerate, uids);
-    // 清空暫存圖片
-    if (!isRegenerate && pendingImages.length > 0) {
-      pendingImages.forEach((img) => {
-        if (img.previewUrl) URL.revokeObjectURL(img.previewUrl);
-      });
-      setPendingImages([]);
+    const finalAudioUids = !isRegenerate && pendingAudios.length > 0
+      ? pendingAudios.map((a) => a.audioUid)
+      : audioUids;
+
+    handleSendMessage(msg, retry, isRegenerate, finalImageUids, finalAudioUids);
+
+    if (!isRegenerate) {
+      if (pendingImages.length > 0) {
+        pendingImages.forEach((img) => { if (img.previewUrl) URL.revokeObjectURL(img.previewUrl); });
+        setPendingImages([]);
+      }
+      if (pendingAudios.length > 0) {
+        pendingAudios.forEach((a) => { if (a.blobUrl) URL.revokeObjectURL(a.blobUrl); });
+        setPendingAudios([]);
+      }
     }
-  }, [handleSendMessage, pendingImages]);
+  }, [handleSendMessage, pendingImages, pendingAudios]);
 
   function handleOptionSelect(label) {
     setInputValue((prev) => (prev ? prev + " " + label : label));
@@ -111,7 +142,10 @@ export default function ConversationClient({ conversationId }) {
         const imageUids = (userMsg.text_content || [])
           .filter((t) => t.type === "image")
           .map((t) => t.content);
-        handleSendWithImages(userMsg.content, nextRetryStr, true, imageUids);
+        const audioUids = (userMsg.text_content || [])
+          .filter((t) => t.type === "audio")
+          .map((t) => t.content);
+        handleSendWithImages(userMsg.content, nextRetryStr, true, imageUids, audioUids);
       }
     };
     window.addEventListener("conversation:regenerate", handler);
@@ -152,6 +186,9 @@ export default function ConversationClient({ conversationId }) {
             onUploadImage={handleUploadImage}
             pendingImages={pendingImages}
             onRemoveImage={handleRemoveImage}
+            onUploadAudio={handleUploadAudio}
+            pendingAudios={pendingAudios}
+            onRemoveAudio={handleRemoveAudio}
           />
         </div>
       </div>

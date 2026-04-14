@@ -222,47 +222,47 @@ export function useConversation(conversationId) {
 
     const key = `init_msg_${conversationId}`;
     const imgKey = `init_images_${conversationId}`;
+    const audioKey = `init_audios_${conversationId}`;
     const initMsg = localStorage.getItem(key);
     if (initMsg) {
-      // 讀取暫存的圖片 UIDs
       let imageUids = [];
       const imgData = localStorage.getItem(imgKey);
       if (imgData) {
-        try {
-          imageUids = JSON.parse(imgData);
-        } catch (e) {
+        try { imageUids = JSON.parse(imgData); } catch (e) {
           console.error("[handleAutoSend] Failed to parse init_images:", e);
+        }
+      }
+
+      let audioUids = [];
+      const audioData = localStorage.getItem(audioKey);
+      if (audioData) {
+        try { audioUids = JSON.parse(audioData); } catch (e) {
+          console.error("[handleAutoSend] Failed to parse init_audios:", e);
         }
       }
 
       setIsSending(true);
       setHasStreamStarted(false);
 
-      // 組裝 text_content（含圖片）
+      // 組裝 text_content（含圖片與音訊）
       const textContent = [{ type: "message", content: initMsg }];
-      for (const uid of imageUids) {
-        textContent.push({ type: "image", content: uid });
-      }
+      for (const uid of imageUids) textContent.push({ type: "image", content: uid });
+      for (const uid of audioUids) textContent.push({ type: "audio", content: uid });
 
       setChatMessages((prev) => [
         ...prev,
         { role: "user", content: initMsg, text_content: textContent, retry: "0" },
-        {
-          role: "llm",
-          content: "Thinking…",
-          text_content: [],
-          isThinking: true,
-          retry: "0",
-        },
+        { role: "llm", content: "Thinking…", text_content: [], isThinking: true, retry: "0" },
       ]);
-      sendMessage(initMsg, "0", imageUids);
+      sendMessage(initMsg, "0", imageUids, audioUids);
       localStorage.removeItem(key);
       localStorage.removeItem(imgKey);
+      localStorage.removeItem(audioKey);
     }
     setDidAutoSend(true);
   }
 
-  function handleSendMessage(msg, retry = "0", isRegenerate = false, imageUids = []) {
+  function handleSendMessage(msg, retry = "0", isRegenerate = false, imageUids = [], audioUids = []) {
     if (isSending) return;
     setIsSending(true);
     setHasStreamStarted(false);
@@ -274,11 +274,16 @@ export function useConversation(conversationId) {
     if (!content) return;
     setInputValue("");
 
-    // 組裝 text_content（含圖片）供歷史紀錄和重傳使用
+    // 組裝 text_content（含圖片與音訊）供歷史紀錄和重傳使用
     const textContent = [{ type: "message", content }];
     if (imageUids && imageUids.length > 0) {
       for (const uid of imageUids) {
         textContent.push({ type: "image", content: uid });
+      }
+    }
+    if (audioUids && audioUids.length > 0) {
+      for (const uid of audioUids) {
+        textContent.push({ type: "audio", content: uid });
       }
     }
 
@@ -302,17 +307,18 @@ export function useConversation(conversationId) {
       },
     ]);
 
-    sendMessage(content, String(retry), imageUids);
+    sendMessage(content, String(retry), imageUids, audioUids);
   }
 
-  function sendMessage(content, retry = "0", imageUids = []) {
+  function sendMessage(content, retry = "0", imageUids = [], audioUids = []) {
     if (!wsServiceRef.current) return;
 
     const payload = outboundMessageDecorator(
       content,
       conversationId,
       String(retry),
-      imageUids
+      imageUids,
+      audioUids
     );
     wsServiceRef.current.send(payload);
   }

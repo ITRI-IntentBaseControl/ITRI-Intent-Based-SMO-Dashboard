@@ -12,10 +12,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Mic, Square, ImagePlus, X } from "lucide-react";
 import { useAgentManager } from "@/app/hooks/agent/useAgentManager";
-import { transcribeSpeech } from "@/app/service/conversation/ExternalService/apiService";
 
 const MAX_IMAGES = 3;
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_AUDIOS = 1;
+const MAX_AUDIO_SIZE = 5 * 1024 * 1024;  // 5MB
 const MAX_RECORDING_SECONDS = 30;
 const MIN_RECORDING_SECONDS = 1;
 
@@ -32,16 +33,19 @@ export function ConversationInput({
   onUploadImage = null,
   pendingImages = [],
   onRemoveImage = null,
+  onUploadAudio = null,
+  pendingAudios = [],
+  onRemoveAudio = null,
 }) {
   const { t } = useLocale();
   const { agentList } = useAgentManager();
   const [internalSelectedAgent, setInternalSelectedAgent] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
   const fileInputRef = useRef(null);
 
   // ---- 錄音狀態 ----
   const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const mediaRecorderRef = useRef(null);
   const speechChunksRef = useRef([]);
@@ -52,13 +56,10 @@ export function ConversationInput({
     selectedAgent !== null ? selectedAgent : internalSelectedAgent;
   const setCurrentSelectedAgent = onSelectAgent || setInternalSelectedAgent;
 
-  // Auto-select agent from preSelectedAgentUid
   useEffect(() => {
     if (preSelectedAgentUid && agentList.length > 0) {
       const agent = agentList.find((a) => a.agent_uid === preSelectedAgentUid);
-      if (agent) {
-        setCurrentSelectedAgent(agent);
-      }
+      if (agent) setCurrentSelectedAgent(agent);
     }
   }, [preSelectedAgentUid, agentList, setCurrentSelectedAgent]);
 
@@ -74,6 +75,7 @@ export function ConversationInput({
 
   // ---- MediaRecorder 錄音 ----
   const startRecording = useCallback(async () => {
+    if (!onUploadAudio) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream, {
@@ -82,21 +84,16 @@ export function ConversationInput({
       speechChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          speechChunksRef.current.push(event.data);
-        }
+        if (event.data.size > 0) speechChunksRef.current.push(event.data);
       };
 
       mediaRecorder.onstop = async () => {
-        // 停止所有音軌
         stream.getTracks().forEach((track) => track.stop());
-        // 清除計時器
         if (recordingTimerRef.current) {
           clearInterval(recordingTimerRef.current);
           recordingTimerRef.current = null;
         }
 
-        // 檢查錄音時長
         const duration = (Date.now() - recordingStartTimeRef.current) / 1000;
         if (duration < MIN_RECORDING_SECONDS) {
           toast.error(t("voice.too_short"));
@@ -105,28 +102,30 @@ export function ConversationInput({
           return;
         }
 
-        // 上傳辨識
         setIsRecording(false);
-        setIsTranscribing(true);
         setRecordingSeconds(0);
 
-        try {
-          const speechBlob = new Blob(speechChunksRef.current, { type: "audio/webm" });
-          const result = await transcribeSpeech(speechBlob);
+        const audioBlob = new Blob(speechChunksRef.current, { type: "audio/webm" });
 
-          if (result?.status_code === 200 && result?.data?.text) {
-            // 追加到現有文字
-            const currentText = inputValue || "";
-            const separator = currentText && !currentText.endsWith(" ") ? " " : "";
-            onChange(currentText + separator + result.data.text);
-          } else {
-            toast.error(t("voice.transcribe_failed"));
-          }
+        // 大小驗證
+        if (audioBlob.size > MAX_AUDIO_SIZE) {
+          toast.error(t("voice.upload_failed"));
+          return;
+        }
+
+        if (pendingAudios.length >= MAX_AUDIOS) {
+          toast.error(`Maximum ${MAX_AUDIOS} audio clips allowed`);
+          return;
+        }
+
+        setIsUploadingAudio(true);
+        try {
+          await onUploadAudio(audioBlob);
         } catch (err) {
-          console.error("[transcribe] error:", err);
-          toast.error(t("voice.transcribe_failed"));
+          console.error("[uploadAudio] error:", err);
+          toast.error(t("voice.upload_failed"));
         } finally {
-          setIsTranscribing(false);
+          setIsUploadingAudio(false);
         }
       };
 
@@ -136,12 +135,10 @@ export function ConversationInput({
       setIsRecording(true);
       setRecordingSeconds(0);
 
-      // 計時器
       recordingTimerRef.current = setInterval(() => {
         setRecordingSeconds((prev) => {
           const next = prev + 1;
           if (next >= MAX_RECORDING_SECONDS) {
-            // 到達上限，自動停止
             if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
               mediaRecorderRef.current.stop();
             }
@@ -154,11 +151,13 @@ export function ConversationInput({
       console.error("[startRecording] error:", err);
       if (err.name === "NotAllowedError") {
         toast.error(t("voice.mic_denied"));
+      } else if (err.name === "NotFoundError") {
+        toast.error(t("voice.mic_not_found"));
       } else {
-        toast.error(t("voice.transcribe_failed"));
+        toast.error(t("voice.upload_failed"));
       }
     }
-  }, [inputValue, onChange, t]);
+  }, [onUploadAudio, pendingAudios, t]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
@@ -167,11 +166,8 @@ export function ConversationInput({
   }, []);
 
   const toggleRecording = useCallback(() => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
+    if (isRecording) stopRecording();
+    else startRecording();
   }, [isRecording, startRecording, stopRecording]);
 
   // ---- 圖片上傳 ----
@@ -186,9 +182,7 @@ export function ConversationInput({
       return;
     }
 
-    const filesToUpload = files.slice(0, remaining);
-
-    for (const file of filesToUpload) {
+    for (const file of files.slice(0, remaining)) {
       if (file.size > MAX_IMAGE_SIZE) {
         toast.error(`${file.name} exceeds 10MB limit`);
         continue;
@@ -197,7 +191,6 @@ export function ConversationInput({
         toast.error(`${file.name} is not PNG format`);
         continue;
       }
-
       setIsUploading(true);
       try {
         await onUploadImage(file);
@@ -209,22 +202,18 @@ export function ConversationInput({
     }
   };
 
-  // 判斷是否可以送出
   const canSend =
     !isLoading &&
     !isSending &&
     !isRecording &&
-    !isTranscribing &&
-    (inputValue.trim() !== "" || pendingImages.length > 0) &&
+    !isUploadingAudio &&
+    (inputValue.trim() !== "" || pendingImages.length > 0 || pendingAudios.length > 0) &&
     (!showAgentSelect || currentSelectedAgent);
 
   const handleSend = () => {
     if (!canSend) return;
     if (showAgentSelect && !currentSelectedAgent) {
-      toast.error(
-        t("agent.select_required_full") ||
-          "Please select an agent before starting a new conversation."
-      );
+      toast.error(t("agent.select_required_full") || "Please select an agent.");
       return;
     }
     onSend(inputValue);
@@ -255,44 +244,60 @@ export function ConversationInput({
         </div>
       )}
 
+      {/* 音訊預覽區 */}
+      {pendingAudios.length > 0 && (
+        <div className="flex flex-col gap-1 px-3">
+          {pendingAudios.map((audio, index) => (
+            <div key={index} className="relative flex items-center gap-2 bg-background rounded-lg border border-border px-2 py-1 group">
+              <audio
+                src={audio.blobUrl}
+                controls
+                className="h-8 w-48 text-xs"
+              />
+              <span className="text-xs text-muted-foreground">
+                {t("voice.audio_clip")} {index + 1}
+              </span>
+              {onRemoveAudio && (
+                <button
+                  onClick={() => onRemoveAudio(index)}
+                  className="ml-auto text-muted-foreground hover:text-destructive"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* 多行輸入框 */}
       <textarea
         value={inputValue}
         onChange={(e) => onChange(e.target.value)}
         placeholder={
-          isTranscribing
-            ? t("voice.transcribing")
-            : isSending
+          isSending
             ? t("conversation.assistant_outputting")
             : t("conversation.input_placeholder")
         }
-        disabled={isTranscribing}
         className="
           flex-1 bg-muted px-3 py-2 text-sm leading-6
           resize-y overflow-auto focus-visible:outline-none
-          disabled:opacity-50
         "
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            if (canSend) {
-              handleSend();
-            }
+            if (canSend) handleSend();
           }
         }}
       />
 
       {/* 下半部：Agent 選單（左）+ 工具按鈕 + 送出（右） */}
       <div className="flex items-center justify-between px-2">
-        {/* 左側：Agent 選單 */}
         <div>
           {showAgentSelect && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="justify-between min-w-[140px]"
-                >
+                <Button variant="outline" className="justify-between min-w-[140px]">
                   {currentSelectedAgent
                     ? currentSelectedAgent.agent_name
                     : t("agent.select_title") || "Select Agent"}
@@ -313,7 +318,6 @@ export function ConversationInput({
           )}
         </div>
 
-        {/* 右側：麥克風 + 錄音計時 + 圖片上傳 + 送出按鈕 */}
         <div className="flex items-center gap-1">
           {/* 錄音計時器 */}
           {isRecording && (
@@ -322,33 +326,28 @@ export function ConversationInput({
             </span>
           )}
 
+          {/* 上傳中提示 */}
+          {isUploadingAudio && (
+            <span className="text-xs text-muted-foreground mr-1">
+              {t("voice.uploading")}
+            </span>
+          )}
+
           {/* 麥克風按鈕 */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleRecording}
-            disabled={isTranscribing}
-            className={`rounded-lg h-8 w-8 ${
-              isRecording
-                ? "text-red-500 bg-red-100 animate-pulse"
-                : isTranscribing
-                ? "opacity-50"
-                : ""
-            }`}
-            title={
-              isRecording
-                ? t("voice.stop_recording")
-                : isTranscribing
-                ? t("voice.transcribing")
-                : t("voice.start_recording")
-            }
-          >
-            {isRecording ? (
-              <Square className="h-4 w-4" />
-            ) : (
-              <Mic className="h-4 w-4" />
-            )}
-          </Button>
+          {onUploadAudio && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleRecording}
+              disabled={isUploadingAudio}
+              className={`rounded-lg h-8 w-8 ${
+                isRecording ? "text-red-500 bg-red-100 animate-pulse" : ""
+              }`}
+              title={isRecording ? t("voice.stop_recording") : t("voice.start_recording")}
+            >
+              {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </Button>
+          )}
 
           {/* 圖片上傳按鈕 */}
           {onUploadImage && (
