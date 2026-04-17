@@ -99,7 +99,7 @@ export function MessageBubble({ msg, onSelectOption, conversationId }) {
                         key={i}
                         src={getAudioUrl(t.content)}
                         controls
-                        className="h-8 w-48"
+                        className="h-10 w-72"
                       />
                     ))}
                 </div>

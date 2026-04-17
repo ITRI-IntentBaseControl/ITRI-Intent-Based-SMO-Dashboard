@@ -23,7 +23,7 @@ export function useConversation(conversationId) {
         const rawMessages = data.map((item) => {
           const contentStr =
             item.text_content
-              ?.filter((t) => t.type !== "image")
+              ?.filter((t) => t.type !== "image" && t.type !== "audio")
               .map((t) => t.content)
               .join("\n") || "";
           const isErrorHistory =
@@ -223,29 +223,32 @@ export function useConversation(conversationId) {
     const key = `init_msg_${conversationId}`;
     const imgKey = `init_images_${conversationId}`;
     const audioKey = `init_audios_${conversationId}`;
-    const initMsg = localStorage.getItem(key);
-    if (initMsg) {
-      let imageUids = [];
-      const imgData = localStorage.getItem(imgKey);
-      if (imgData) {
-        try { imageUids = JSON.parse(imgData); } catch (e) {
-          console.error("[handleAutoSend] Failed to parse init_images:", e);
-        }
-      }
+    const initMsg = localStorage.getItem(key) || "";
 
-      let audioUids = [];
-      const audioData = localStorage.getItem(audioKey);
-      if (audioData) {
-        try { audioUids = JSON.parse(audioData); } catch (e) {
-          console.error("[handleAutoSend] Failed to parse init_audios:", e);
-        }
+    let imageUids = [];
+    const imgData = localStorage.getItem(imgKey);
+    if (imgData) {
+      try { imageUids = JSON.parse(imgData); } catch (e) {
+        console.error("[handleAutoSend] Failed to parse init_images:", e);
       }
+    }
 
+    let audioUids = [];
+    const audioData = localStorage.getItem(audioKey);
+    if (audioData) {
+      try { audioUids = JSON.parse(audioData); } catch (e) {
+        console.error("[handleAutoSend] Failed to parse init_audios:", e);
+      }
+    }
+
+    // 有文字 或 有媒體檔案（圖片/音訊）才發送
+    if (initMsg || imageUids.length > 0 || audioUids.length > 0) {
       setIsSending(true);
       setHasStreamStarted(false);
 
       // 組裝 text_content（含圖片與音訊）
-      const textContent = [{ type: "message", content: initMsg }];
+      const textContent = [];
+      if (initMsg) textContent.push({ type: "message", content: initMsg });
       for (const uid of imageUids) textContent.push({ type: "image", content: uid });
       for (const uid of audioUids) textContent.push({ type: "audio", content: uid });
 
@@ -271,7 +274,11 @@ export function useConversation(conversationId) {
       msg = inputValue;
     }
     const content = String(msg ?? "").trim();
-    if (!content) return;
+    // 有文字 或 有媒體檔案（圖片/音訊）才允許發送
+    if (!content && imageUids.length === 0 && audioUids.length === 0) {
+      setIsSending(false);
+      return;
+    }
     setInputValue("");
 
     // 組裝 text_content（含圖片與音訊）供歷史紀錄和重傳使用

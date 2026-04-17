@@ -124,6 +124,11 @@
     "show_all": "顯示全部",
     "detailed_content": "詳細內容",
     "thought_process": "思考過程",
+    "tool_call": "呼叫工具",
+    "dispatch_notice": "調度通知",
+    "intent_clarification": "意圖釐清",
+    "task_confirmation": "任務確認",
+    "pending_state": "暫存狀態",
     "thinking": "思考中..."
   },
 

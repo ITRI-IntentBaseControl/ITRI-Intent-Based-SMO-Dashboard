@@ -131,8 +131,10 @@ export default function HomePage() {
       }
 
       // 3. 暫存訊息和檔案 UIDs 到 localStorage
-      if (message && message.trim()) {
-        localStorage.setItem(`init_msg_${conversationUid}`, message);
+      // 即使沒有文字，只要有媒體檔案也要儲存（儲存空字串讓 handleAutoSend 能觸發）
+      const hasMedia = imageUids.length > 0 || audioUids.length > 0;
+      if ((message && message.trim()) || hasMedia) {
+        localStorage.setItem(`init_msg_${conversationUid}`, message?.trim() || "");
       }
       if (imageUids.length > 0) {
         localStorage.setItem(

@@ -7,7 +7,7 @@ import { getImage } from "@/app/service/conversation/ExternalService/apiService"
 import { useLocale } from "@/components/LocaleProvider";
 
 interface RawItem {
-  type?: "image" | "message";
+  type?: "image" | "message" | "audio";
   content: string;
 }
 
@@ -498,29 +498,35 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
   // 1. 閉合標籤 (group 1, 2, 3): <tag>content</tag>
   // 2. 前綴標籤 (group 4, 5): [tag] 或 **[tag]** (可選的 **)
   const tagRegex =
-    /(<(brief_summary|detailed_summary|history)>(.*?)<\/\2>)|((?:\*\*)?\[(思考|給使用者的回覆)\](?:\*\*)?)/gs;
+    /(<(brief_summary|detailed_summary|history|dispatch|intent_clarification|task_confirmation|pending_state)>(.*?)<\/\2>)|((?:\*\*)?\[(思考|給使用者的回覆|呼叫工具)\](?:\*\*)?)/gs;
 
   // 8) 最終渲染邏輯
+  //    SSE 串流會把一段回覆拆成多個 text_content 項目，
+  //    標籤可能跨越不同 chunk，所以先合併所有 message 再解析。
+  const imageItems = data.filter((d) => d.type === "image");
+  const mergedText = data
+    .filter((d) => d.type !== "image" && d.type !== "audio")
+    .map((d) => normalize(d.content))
+    .join("")
+    .replace(/\[\/(思考|給使用者的回覆|呼叫工具)\]/g, "");
+
   return (
     <div className="rounded-lg bg-card px-4 pt-4 text-card-foreground">
-      {data.map((d, i) => {
-        const itemKey = `item-${i}`;
+      {/* 渲染圖片 */}
+      {imageItems.map((d, i) => (
+        <ConversationImageBlock
+          key={`img-${i}`}
+          i={i}
+          conversationId={conversationId}
+          imageId={d.content}
+          setImg={setImg}
+        />
+      ))}
 
-        // --- 處理圖片 ---
-        if (d.type === "image") {
-          return (
-            <ConversationImageBlock
-              key={itemKey}
-              i={i}
-              conversationId={conversationId}
-              imageId={d.content}
-              setImg={setImg}
-            />
-          );
-        }
-
-        // --- 處理文字訊息 ---
-        const raw = normalize(d.content);
+      {/* 渲染合併後的文字內容 */}
+      {(() => {
+        const raw = mergedText;
+        if (!raw.trim()) return null;
         const matches = [...raw.matchAll(tagRegex)];
         const renderedElements: React.ReactNode[] = [];
         let lastIndex = 0;
@@ -534,32 +540,34 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
           if (untaggedContent) {
             renderedElements.push(
               <RenderContentChunk
-                key={`${itemKey}-untagged-${j}`}
+                key={`merged-untagged-${j}`}
                 content={untaggedContent}
-                chunkKey={`${itemKey}-untagged-${j}`}
+                chunkKey={`merged-untagged-${j}`}
               />
             );
           }
 
-          const partKey = `${itemKey}-part-${j}`;
+          const partKey = `merged-part-${j}`;
           const isAngleTag = match[1]; // 閉合標籤 <tag>content</tag>
           const isBracketTag = match[4]; // 前綴標籤 [tag] 或 **[tag]**
 
           if (isAngleTag) {
-            // --- 情況 A: 閉合標籤 (brief_summary, detailed_summary) ---
+            // --- 情況 A: 閉合標籤 ---
             const tagType = match[2];
             const tagContent = match[3] || "";
-            const renderedChunk = (
-              <RenderContentChunk content={tagContent} chunkKey={partKey} />
-            );
-
             if (tagType === "brief_summary") {
+              const renderedChunk = (
+                <RenderContentChunk content={tagContent} chunkKey={partKey} />
+              );
               renderedElements.push(
                 <div key={partKey} className="mb-4">
                   {renderedChunk}
                 </div>
               );
             } else if (tagType === "detailed_summary") {
+              const renderedChunk = (
+                <RenderContentChunk content={tagContent} chunkKey={partKey} />
+              );
               renderedElements.push(
                 <CollapsibleBlock
                   key={partKey}
@@ -568,8 +576,7 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
                   {renderedChunk}
                 </CollapsibleBlock>
               );
-            } else {
-              // history
+            } else if (tagType === "history") {
               renderedElements.push(
                 <IframeRenderer
                   key={partKey}
@@ -577,10 +584,28 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
                   partKey={partKey}
                 />
               );
+            } else {
+              const labelMap: Record<string, string> = {
+                dispatch: t("render.dispatch_notice"),
+                intent_clarification: t("render.intent_clarification"),
+                task_confirmation: t("render.task_confirmation"),
+                pending_state: t("render.pending_state"),
+              };
+              const renderedChunk = (
+                <RenderContentChunk content={tagContent} chunkKey={partKey} />
+              );
+              renderedElements.push(
+                <CollapsibleBlock
+                  key={partKey}
+                  title={labelMap[tagType] ?? tagType}
+                >
+                  {renderedChunk}
+                </CollapsibleBlock>
+              );
             }
             lastIndex = matchIndex + match[0].length;
           } else if (isBracketTag) {
-            // --- 情況 B: 前綴標籤 (思考, 給使用者的回覆) ---
+            // --- 情況 B: 前綴標籤 (思考, 給使用者的回覆, 呼叫工具) ---
             const tagType = match[5]; // "思考" 或 "給使用者的回覆"
 
             // 找到這個標籤的內容：從標籤結束後，到下一個標籤開始前 (或字串結尾)
@@ -608,6 +633,12 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
                     {renderedChunk}
                   </CollapsibleBlock>
                 );
+              } else if (tagType === "呼叫工具") {
+                renderedElements.push(
+                  <CollapsibleBlock key={partKey} title={t("render.tool_call")}>
+                    {renderedChunk}
+                  </CollapsibleBlock>
+                );
               } else {
                 // 給使用者的回覆
                 renderedElements.push(
@@ -627,15 +658,15 @@ export function RenderDynamicContent({ data, conversationId }: Props) {
         if (remainingContent) {
           renderedElements.push(
             <RenderContentChunk
-              key={`${itemKey}-remaining`}
+              key={`merged-remaining`}
               content={remainingContent}
-              chunkKey={`${itemKey}-remaining`}
+              chunkKey={`merged-remaining`}
             />
           );
         }
 
         return renderedElements;
-      })}
+      })()}
 
       {img && (
         <div

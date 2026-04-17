@@ -16,9 +16,63 @@ import { useAgentManager } from "@/app/hooks/agent/useAgentManager";
 const MAX_IMAGES = 3;
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_AUDIOS = 1;
-const MAX_AUDIO_SIZE = 5 * 1024 * 1024;  // 5MB
+const MAX_AUDIO_SIZE = 50 * 1024 * 1024;  // 50MB (WAV 格式較大，Dify 音訊上限 50MB)
 const MAX_RECORDING_SECONDS = 30;
 const MIN_RECORDING_SECONDS = 1;
+
+/**
+ * 將 WebM/Opus Blob 轉為 WAV Blob（瀏覽器原生 Web Audio API，無需外部套件）
+ */
+async function convertWebmToWav(webmBlob) {
+  const audioCtx = new AudioContext();
+  const arrayBuffer = await webmBlob.arrayBuffer();
+  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  await audioCtx.close();
+
+  const numChannels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const length = audioBuffer.length;
+
+  // 合併所有聲道為 interleaved PCM
+  const pcm = new Float32Array(length * numChannels);
+  for (let ch = 0; ch < numChannels; ch++) {
+    const channelData = audioBuffer.getChannelData(ch);
+    for (let i = 0; i < length; i++) {
+      pcm[i * numChannels + ch] = channelData[i];
+    }
+  }
+
+  // 16-bit PCM
+  const bytesPerSample = 2;
+  const dataLength = pcm.length * bytesPerSample;
+  const buffer = new ArrayBuffer(44 + dataLength);
+  const view = new DataView(buffer);
+
+  // WAV header
+  const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + dataLength, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * bytesPerSample, true);
+  view.setUint16(32, numChannels * bytesPerSample, true);
+  view.setUint16(34, 16, true); // bits per sample
+  writeStr(36, "data");
+  view.setUint32(40, dataLength, true);
+
+  // PCM samples (clamp to [-1, 1] → 16-bit int)
+  let offset = 44;
+  for (let i = 0; i < pcm.length; i++, offset += 2) {
+    const s = Math.max(-1, Math.min(1, pcm[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+
+  return new Blob([buffer], { type: "audio/wav" });
+}
 
 export function ConversationInput({
   inputValue,
@@ -105,13 +159,7 @@ export function ConversationInput({
         setIsRecording(false);
         setRecordingSeconds(0);
 
-        const audioBlob = new Blob(speechChunksRef.current, { type: "audio/webm" });
-
-        // 大小驗證
-        if (audioBlob.size > MAX_AUDIO_SIZE) {
-          toast.error(t("voice.upload_failed"));
-          return;
-        }
+        const webmBlob = new Blob(speechChunksRef.current, { type: "audio/webm" });
 
         if (pendingAudios.length >= MAX_AUDIOS) {
           toast.error(`Maximum ${MAX_AUDIOS} audio clips allowed`);
@@ -120,7 +168,16 @@ export function ConversationInput({
 
         setIsUploadingAudio(true);
         try {
-          await onUploadAudio(audioBlob);
+          // WebM → WAV 轉換（Gemini 等 LLM 不支援 webm，需要 wav 格式）
+          const wavBlob = await convertWebmToWav(webmBlob);
+
+          // 大小驗證（WAV 比 WebM 大，用轉換後的大小判斷）
+          if (wavBlob.size > MAX_AUDIO_SIZE) {
+            toast.error(t("voice.upload_failed"));
+            return;
+          }
+
+          await onUploadAudio(wavBlob);
         } catch (err) {
           console.error("[uploadAudio] error:", err);
           toast.error(t("voice.upload_failed"));

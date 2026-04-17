@@ -124,6 +124,11 @@
     "show_all": "Show all",
     "detailed_content": "Detailed Content",
     "thought_process": "Thought Process",
+    "tool_call": "Tool Call",
+    "dispatch_notice": "Dispatch Notice",
+    "intent_clarification": "Intent Clarification",
+    "task_confirmation": "Task Confirmation",
+    "pending_state": "Pending State",
     "thinking": "Thinking..."
   },
 

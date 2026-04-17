@@ -149,7 +149,7 @@ export async function uploadAudio(conversationUid, audioBlob) {
   try {
     const formData = new FormData();
     formData.append("conversation_uid", conversationUid);
-    formData.append("audio", audioBlob, "audio.webm");
+    formData.append("audio", audioBlob, "audio.wav");
 
     const response = await postAPI(
       "conversation_mgt/AudioManager/upload_audio",
